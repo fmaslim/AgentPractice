@@ -1,4 +1,5 @@
 using AgentPractice.Web.Models;
+using AgentPractice.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AgentPractice.Web.Controllers;
@@ -7,15 +8,17 @@ namespace AgentPractice.Web.Controllers;
 [Route("api/[controller]")]
 public class TaskItemsController : ControllerBase
 {
+    private readonly ITaskItemService _taskItemService;
+
+    public TaskItemsController(ITaskItemService taskItemService)
+    {
+        _taskItemService = taskItemService;
+    }
+
     [HttpGet]
     public ActionResult<IEnumerable<TaskItem>> Get()
     {
-        var items = new List<TaskItem>
-        {
-            new() { Id = 1, Title = "Set up MVC project", IsDone = true },
-            new() { Id = 2, Title = "Add health endpoint", IsDone = true },
-            new() { Id = 3, Title = "Create first domain slice", IsDone = false }
-        };
+        var items = _taskItemService.GetTaskItems();
 
         return Ok(items);
     }
