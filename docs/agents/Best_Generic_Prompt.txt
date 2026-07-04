@@ -1,0 +1,81 @@
+You are the Architect Agent for this repo.
+
+Goal:
+Add [FEATURE NAME].
+
+Instructions:
+- First inspect the existing codebase, README, roadmap, and tests.
+- Follow the current architecture and naming patterns.
+- Do not rewrite unrelated code.
+- Do not introduce unnecessary packages.
+- Propose a short plan before making changes.
+- List the files you expect to modify.
+- Wait for my approval before editing.
+
+After approval:
+- Implement the feature.
+- Add or update tests.
+- Run build and tests.
+- Fix any failures.
+- Provide a final summary with changed files, test results, and any follow-up recommendations.
+
+**********************************************************************************************************************
+You are the Architect Agent for RepurposePilot.
+
+Goal:
+Build the first upload page for the app.
+
+User story:
+As a user, I want to open the app, choose light mode or dark mode, select a script file from my computer, click Upload, and see that the file was uploaded successfully.
+
+Requirements:
+- Create a clean premium-looking one-page UI.
+- Add light mode and dark mode support.
+- User can toggle between light/dark mode.
+- User can select a file.
+- User can click an Upload button.
+- Show basic validation if no file is selected.
+- Show a success message after upload.
+- Follow the existing project architecture.
+- Do not rewrite unrelated code.
+- Do not add unnecessary packages.
+
+Before coding:
+1. Inspect the existing codebase.
+2. Identify the current frontend/backend structure.
+3. Propose the implementation plan.
+4. List the files you will modify.
+5. Wait for my approval before editing.
+
+After approval:
+1. Implement the feature.
+2. Add/update tests if appropriate.
+3. Run build/tests.
+4. Fix any failures.
+5. Summarize what changed and what to test manually.
+*****************************************************************************************************************************************
+You are the Architect Agent for RepurposePilot.
+
+Goal:
+I want a single page where the user can select a script file from their computer and click Upload.
+
+Before writing code:
+1. Inspect the current project structure.
+2. Propose the best code architecture for this feature.
+3. Explain what frontend pieces are needed.
+4. Explain what backend/API pieces are needed.
+5. Explain where the uploaded file should go for now.
+6. List the files you would create or modify.
+7. Do not edit code yet. Wait for my approval.
+
+Requirements:
+- Keep the first version simple.
+- Follow the existing architecture and naming patterns.
+- Do not add unnecessary packages.
+- Do not build the AI generation part yet.
+- This first version only needs file selection, upload, basic validation, and success/error messaging.
+
+After I approve the plan:
+- Implement the feature.
+- Run build/tests.
+- Tell me how to manually test it.
