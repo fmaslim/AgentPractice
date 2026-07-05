@@ -22,4 +22,12 @@ public class TaskItemsController : ControllerBase
 
         return Ok(items);
     }
+
+    [HttpPost]
+    public ActionResult<TaskItem> Create(CreateTaskItemRequest request)
+    {
+        var taskItem = _taskItemService.CreateTaskItem(request.Title);
+
+        return StatusCode(StatusCodes.Status201Created, taskItem);
+    }
 }

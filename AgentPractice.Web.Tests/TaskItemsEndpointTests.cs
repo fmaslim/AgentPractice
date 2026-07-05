@@ -33,4 +33,38 @@ public class TaskItemsEndpointTests : IClassFixture<WebApplicationFactory<Progra
         Assert.Equal("Set up MVC project", items[0].Title);
         Assert.True(items[0].IsDone);
     }
+
+    [Fact]
+    public async Task PostTaskItem_CreatesItem_AndReturnsIt()
+    {
+        var createResponse = await _client.PostAsJsonAsync("/api/taskitems", new { title = "Write endpoint plan" });
+
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+        var createdItem = await createResponse.Content.ReadFromJsonAsync<TaskItem>();
+
+        Assert.NotNull(createdItem);
+        Assert.True(createdItem.Id > 3);
+        Assert.Equal("Write endpoint plan", createdItem.Title);
+        Assert.False(createdItem.IsDone);
+
+        var getResponse = await _client.GetAsync("/api/taskitems");
+
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+
+        var items = await getResponse.Content.ReadFromJsonAsync<TaskItem[]>();
+
+        Assert.NotNull(items);
+        Assert.Contains(items, item => item.Id == createdItem.Id && item.Title == createdItem.Title && !item.IsDone);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task PostTaskItem_WithInvalidTitle_ReturnsBadRequest(string title)
+    {
+        var response = await _client.PostAsJsonAsync("/api/taskitems", new { title });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }

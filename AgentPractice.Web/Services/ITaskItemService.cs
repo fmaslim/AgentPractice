@@ -5,4 +5,6 @@ namespace AgentPractice.Web.Services;
 public interface ITaskItemService
 {
     IEnumerable<TaskItem> GetTaskItems();
+
+    TaskItem CreateTaskItem(string title);
 }

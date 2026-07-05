@@ -65,3 +65,9 @@ Purpose: capture every meaningful project decision with context, rationale, and 
 - Why: Improve troubleshooting quickly without adding external logging dependencies.
 - Alternatives considered: Adding a third-party logging package now.
 - Consequences: Simple and reviewable logging baseline now, with option to evolve later if requirements grow.
+
+### 2026-07-05 - DEC-0010 - Add a singleton in-memory create slice for TaskItem
+- Decision: Add POST /api/taskitems backed by a singleton in-memory TaskItemService and a minimal create request DTO.
+- Why: Deliver the smallest useful write path without introducing a database, repository layer, or broader CRUD surface.
+- Alternatives considered: Keep the API read-only for now; introduce persistence or a repository abstraction.
+- Consequences: Created items persist for the lifetime of the running app instance, but state is still lost on restart.

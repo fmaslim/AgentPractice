@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<ITaskItemService, TaskItemService>();
+builder.Services.AddSingleton<ITaskItemService, TaskItemService>();
 
 var app = builder.Build();
 

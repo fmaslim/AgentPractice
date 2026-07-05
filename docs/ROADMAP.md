@@ -13,10 +13,12 @@ Decision rationale: see [decisions.md](decisions.md).
 - Added typed status vertical slice (model + API response + MVC status view).
 - Enabled Swagger/OpenAPI in Development.
 - Added first domain API slice: in-memory TaskItem endpoint at /api/taskitems.
+- Added TaskItem create slice: POST /api/taskitems with app-lifetime in-memory storage.
 - Added minimal structured request logging for /api routes (method, path, status, elapsed time, request id).
 - Added one small service layer abstraction for TaskItem retrieval (still in-memory).
-- Added minimal tests for health and TaskItem GET endpoints.
+- Added minimal tests for health and TaskItem GET/POST endpoints.
 - Added a short troubleshooting section for local run and Swagger access.
+- Added UTC-only server time endpoint at /api/servertime with integration coverage.
 
 ## In Progress
 
