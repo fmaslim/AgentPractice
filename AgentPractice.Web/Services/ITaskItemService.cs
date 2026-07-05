@@ -6,5 +6,7 @@ public interface ITaskItemService
 {
     IEnumerable<TaskItem> GetTaskItems();
 
+    TaskItem? GetTaskItemById(int id);
+
     TaskItem CreateTaskItem(string title);
 }

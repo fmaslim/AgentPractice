@@ -35,6 +35,29 @@ public class TaskItemsEndpointTests : IClassFixture<WebApplicationFactory<Progra
     }
 
     [Fact]
+    public async Task GetTaskItemById_WithExistingId_ReturnsOkAndItem()
+    {
+        var response = await _client.GetAsync("/api/taskitems/2");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var item = await response.Content.ReadFromJsonAsync<TaskItem>();
+
+        Assert.NotNull(item);
+        Assert.Equal(2, item.Id);
+        Assert.Equal("Add health endpoint", item.Title);
+        Assert.True(item.IsDone);
+    }
+
+    [Fact]
+    public async Task GetTaskItemById_WithMissingId_ReturnsNotFound()
+    {
+        var response = await _client.GetAsync("/api/taskitems/999");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task PostTaskItem_CreatesItem_AndReturnsIt()
     {
         var createResponse = await _client.PostAsJsonAsync("/api/taskitems", new { title = "Write endpoint plan" });

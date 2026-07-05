@@ -16,6 +16,11 @@ public class TaskItemService : ITaskItemService
         return _taskItems;
     }
 
+    public TaskItem? GetTaskItemById(int id)
+    {
+        return _taskItems.FirstOrDefault(taskItem => taskItem.Id == id);
+    }
+
     public TaskItem CreateTaskItem(string title)
     {
         var nextId = _taskItems.Count == 0 ? 1 : _taskItems.Max(taskItem => taskItem.Id) + 1;

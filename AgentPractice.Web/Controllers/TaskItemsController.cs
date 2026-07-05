@@ -23,6 +23,19 @@ public class TaskItemsController : ControllerBase
         return Ok(items);
     }
 
+    [HttpGet("{id:int}")]
+    public ActionResult<TaskItem> GetById(int id)
+    {
+        var item = _taskItemService.GetTaskItemById(id);
+
+        if (item is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(item);
+    }
+
     [HttpPost]
     public ActionResult<TaskItem> Create(CreateTaskItemRequest request)
     {
