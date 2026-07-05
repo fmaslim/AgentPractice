@@ -14,16 +14,15 @@ Decision rationale: see [decisions.md](decisions.md).
 - Enabled Swagger/OpenAPI in Development.
 - Added first domain API slice: in-memory TaskItem endpoint at /api/taskitems.
 - Added minimal structured request logging for /api routes (method, path, status, elapsed time, request id).
+- Added one small service layer abstraction for TaskItem retrieval (still in-memory).
+- Added minimal tests for health and TaskItem GET endpoints.
+- Added a short troubleshooting section for local run and Swagger access.
 
 ## In Progress
 
 - Keeping roadmap, README, and decision log continuously aligned.
 
 ## Next
-
-- Add one small service layer abstraction for TaskItem retrieval (still in-memory).
-- Add minimal tests for health and TaskItem GET endpoints.
-- Add a short troubleshooting section for local run and Swagger access.
 
 ## Later
 

@@ -28,3 +28,25 @@ Scope: Keep the project intentionally simple, document decisions clearly, and ad
 - Record each architecture or design decision in [docs/decisions.md](docs/decisions.md).
 - Track active tasks in [TODO.md](TODO.md).
 - Use [docs/ROADMAP.md](docs/ROADMAP.md) for current priorities and [docs/decisions.md](docs/decisions.md) as the rationale source of truth.
+
+## Troubleshooting
+
+### Local Run
+
+- From the repo root, run:
+	- `dotnet run --project AgentPractice.Web`
+- If HTTPS certificate trust prompts appear, run:
+	- `dotnet dev-certs https --trust`
+- If startup fails because a port is already in use, stop the process using that port or run with a temporary URL:
+	- `dotnet run --project AgentPractice.Web --urls http://localhost:5050`
+
+### Swagger Access
+
+- Swagger UI is enabled only in Development.
+- Default local URLs from launch settings are:
+	- https://localhost:7217/swagger
+	- http://localhost:5034/swagger
+- If Swagger returns 404:
+	- Confirm `ASPNETCORE_ENVIRONMENT` is `Development`.
+	- Check startup logs for the listening URLs and open `{baseUrl}/swagger`.
+	- Ensure you are opening the web project, not the test project.
