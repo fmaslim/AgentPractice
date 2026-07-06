@@ -90,4 +90,61 @@ public class TaskItemsEndpointTests : IClassFixture<WebApplicationFactory<Progra
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    [Fact]
+    public async Task PutTaskItem_WithExistingId_ReturnsOkAndUpdatedItem()
+    {
+        var response = await _client.PutAsJsonAsync("/api/taskitems/2", new { title = "Update endpoint docs", isDone = false });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var updatedItem = await response.Content.ReadFromJsonAsync<TaskItem>();
+
+        Assert.NotNull(updatedItem);
+        Assert.Equal(2, updatedItem.Id);
+        Assert.Equal("Update endpoint docs", updatedItem.Title);
+        Assert.False(updatedItem.IsDone);
+    }
+
+    [Fact]
+    public async Task PutTaskItem_WithMissingId_ReturnsNotFound()
+    {
+        var response = await _client.PutAsJsonAsync("/api/taskitems/999", new { title = "Does not matter", isDone = true });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PutTaskItem_WithNonPositiveId_ReturnsBadRequest()
+    {
+        var response = await _client.PutAsJsonAsync("/api/taskitems/0", new { title = "Invalid id", isDone = true });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PutTaskItem_WithNegativeId_ReturnsBadRequest()
+    {
+        var response = await _client.PutAsJsonAsync("/api/taskitems/-1", new { title = "Invalid id", isDone = true });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task PutTaskItem_WithInvalidTitle_ReturnsBadRequest(string title)
+    {
+        var response = await _client.PutAsJsonAsync("/api/taskitems/1", new { title, isDone = true });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PutTaskItem_WithNullTitle_ReturnsBadRequest()
+    {
+        var response = await _client.PutAsJsonAsync("/api/taskitems/1", new { title = (string?)null, isDone = true });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }

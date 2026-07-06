@@ -43,4 +43,27 @@ public class TaskItemsController : ControllerBase
 
         return StatusCode(StatusCodes.Status201Created, taskItem);
     }
+
+    [HttpPut("{id:int}")]
+    public ActionResult<TaskItem> Update(int id, UpdateTaskItemRequest request)
+    {
+        if (id <= 0)
+        {
+            return BadRequest();
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Title))
+        {
+            return BadRequest();
+        }
+
+        var updatedItem = _taskItemService.UpdateTaskItem(id, request.Title, request.IsDone);
+
+        if (updatedItem is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(updatedItem);
+    }
 }

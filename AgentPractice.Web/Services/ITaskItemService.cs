@@ -9,4 +9,6 @@ public interface ITaskItemService
     TaskItem? GetTaskItemById(int id);
 
     TaskItem CreateTaskItem(string title);
+
+    TaskItem? UpdateTaskItem(int id, string title, bool isDone);
 }

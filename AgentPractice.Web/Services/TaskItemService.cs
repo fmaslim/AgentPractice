@@ -36,4 +36,19 @@ public class TaskItemService : ITaskItemService
 
         return taskItem;
     }
+
+    public TaskItem? UpdateTaskItem(int id, string title, bool isDone)
+    {
+        var existingItem = _taskItems.FirstOrDefault(taskItem => taskItem.Id == id);
+
+        if (existingItem is null)
+        {
+            return null;
+        }
+
+        existingItem.Title = title;
+        existingItem.IsDone = isDone;
+
+        return existingItem;
+    }
 }
