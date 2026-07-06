@@ -53,7 +53,7 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task GetTaskItemsPage_DoesNotContainEditDeleteOrCompleteControls()
+    public async Task GetTaskItemsPage_DoesNotContainOutOfScopeControls()
     {
         var response = await _client.GetAsync("/Home/TaskItems");
 
@@ -63,13 +63,15 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
 
         Assert.DoesNotContain(">Edit<", html);
         Assert.DoesNotContain(">Delete<", html);
-        Assert.DoesNotContain(">Complete<", html);
         Assert.DoesNotContain("btn-outline-primary", html);
         Assert.DoesNotContain("btn-outline-danger", html);
+        Assert.DoesNotContain("Filter", html);
+        Assert.DoesNotContain("Sort", html);
+        Assert.DoesNotContain("Pagination", html);
     }
 
     [Fact]
-    public async Task GetTaskItemsScript_UsesApiGetPostValidationAndMapsIsDoneToBadges()
+    public async Task GetTaskItemsScript_UsesApiGetPostPatchValidationAndCompleteFlow()
     {
         var response = await _client.GetAsync("/js/task-items.js");
 
@@ -96,5 +98,15 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("buildStatusBadge(Boolean(item.isDone))", script);
         Assert.Contains("isDone ? \"Done\" : \"Open\"", script);
         Assert.Contains("isDone ? \"badge text-bg-success\" : \"badge text-bg-secondary\"", script);
+        Assert.Contains("if (!item.isDone)", script);
+        Assert.Contains("button.textContent = \"Mark Complete\"", script);
+        Assert.Contains("fetch(`/api/TaskItems/${itemId}/complete`", script);
+        Assert.Contains("method: \"PATCH\"", script);
+        Assert.Contains("completeButton.disabled = true;", script);
+        Assert.Contains("completeButton.textContent = \"Completing...\";", script);
+        Assert.Contains("await completeTaskItem(item.id);", script);
+        Assert.Contains("completeButton.disabled = false;", script);
+        Assert.Contains("errorEl.textContent = \"Unable to complete task item.\";", script);
+        Assert.Contains("errorEl.textContent = \"Task completed, but the list could not be refreshed. Please reload.\";", script);
     }
 }

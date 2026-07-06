@@ -47,6 +47,27 @@
         return badge;
     }
 
+    function buildCompleteButton() {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-sm btn-outline-success";
+        button.textContent = "Mark Complete";
+        return button;
+    }
+
+    async function completeTaskItem(itemId) {
+        const response = await fetch(`/api/TaskItems/${itemId}/complete`, {
+            method: "PATCH",
+            headers: {
+                Accept: "application/json"
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error("Complete failed with status " + response.status + ".");
+        }
+    }
+
     function renderList(items) {
         for (const item of items) {
             const row = document.createElement("div");
@@ -69,6 +90,40 @@
             const actions = document.createElement("div");
             actions.className = "d-flex align-items-center gap-2";
             actions.appendChild(buildStatusBadge(Boolean(item.isDone)));
+
+            if (!item.isDone) {
+                const completeButton = buildCompleteButton();
+
+                completeButton.addEventListener("click", async function () {
+                    const originalLabel = completeButton.textContent;
+
+                    setVisible(errorEl, false);
+                    errorEl.textContent = "";
+                    completeButton.disabled = true;
+                    completeButton.textContent = "Completing...";
+
+                    try {
+                        await completeTaskItem(item.id);
+                    } catch (error) {
+                        completeButton.disabled = false;
+                        completeButton.textContent = originalLabel;
+                        errorEl.textContent = "Unable to complete task item.";
+                        setVisible(errorEl, true);
+                        return;
+                    }
+
+                    try {
+                        await loadTaskItems();
+                    } catch (error) {
+                        completeButton.disabled = false;
+                        completeButton.textContent = originalLabel;
+                        errorEl.textContent = "Task completed, but the list could not be refreshed. Please reload.";
+                        setVisible(errorEl, true);
+                    }
+                });
+
+                actions.appendChild(completeButton);
+            }
 
             row.appendChild(content);
             row.appendChild(actions);
