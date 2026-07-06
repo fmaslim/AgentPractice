@@ -26,6 +26,23 @@ Decision rationale: see [decisions.md](decisions.md).
 
 ## Next
 
+1. PATCH /api/TaskItems/{id}/complete
+	- Business action endpoint.
+	- Marks an existing task item complete.
+	- Follow controller/service/tests pattern.
+2. Static Task Items UI page
+	- Simple page only.
+	- No API wiring yet.
+	- Show title, input box, Add button, placeholder task list, done checkbox, edit button, and delete button.
+3. Wire UI to GET /api/TaskItems
+	- Load task list from API.
+4. Wire UI to POST /api/TaskItems
+	- Add task from page.
+5. Wire UI to PUT /api/TaskItems/{id}
+	- Edit task title and done status from page.
+6. Wire UI to DELETE /api/TaskItems/{id}
+	- Delete task from page.
+
 ## Later
 
 - Introduce persistence for TaskItems (after explicit approval).
