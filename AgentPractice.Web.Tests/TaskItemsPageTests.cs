@@ -61,9 +61,7 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
 
         var html = await response.Content.ReadAsStringAsync();
 
-        Assert.DoesNotContain(">Edit<", html);
         Assert.DoesNotContain(">Delete<", html);
-        Assert.DoesNotContain("btn-outline-primary", html);
         Assert.DoesNotContain("btn-outline-danger", html);
         Assert.DoesNotContain("Filter", html);
         Assert.DoesNotContain("Sort", html);
@@ -71,7 +69,7 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task GetTaskItemsScript_UsesApiGetPostPatchValidationAndCompleteFlow()
+    public async Task GetTaskItemsScript_UsesApiGetPostPutPatchValidationAndCompleteFlow()
     {
         var response = await _client.GetAsync("/js/task-items.js");
 
@@ -98,6 +96,17 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("buildStatusBadge(Boolean(item.isDone))", script);
         Assert.Contains("isDone ? \"Done\" : \"Open\"", script);
         Assert.Contains("isDone ? \"badge text-bg-success\" : \"badge text-bg-secondary\"", script);
+        Assert.Contains("let editingTaskItemId = null;", script);
+        Assert.Contains("button.textContent = \"Edit\"", script);
+        Assert.Contains("button.textContent = \"Save\"", script);
+        Assert.Contains("button.textContent = \"Cancel\"", script);
+        Assert.Contains("fetch(`/api/TaskItems/${itemId}`", script);
+        Assert.Contains("method: \"PUT\"", script);
+        Assert.Contains("JSON.stringify({ title: title, isDone: isDone })", script);
+        Assert.Contains("await updateTaskItem(item.id, nextTitle, Boolean(item.isDone));", script);
+        Assert.Contains("editingTaskItemId = item.id;", script);
+        Assert.Contains("editingTaskItemId = null;", script);
+        Assert.Contains("errorEl.textContent = \"Unable to save task item.\";", script);
         Assert.Contains("if (!item.isDone)", script);
         Assert.Contains("button.textContent = \"Mark Complete\"", script);
         Assert.Contains("fetch(`/api/TaskItems/${itemId}/complete`", script);

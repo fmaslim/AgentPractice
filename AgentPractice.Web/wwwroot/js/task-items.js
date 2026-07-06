@@ -14,6 +14,7 @@
     }
 
     let isSubmittingCreate = false;
+    let editingTaskItemId = null;
 
     function setVisible(element, visible) {
         element.classList.toggle("d-none", !visible);
@@ -55,6 +56,30 @@
         return button;
     }
 
+    function buildEditButton() {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-sm btn-outline-primary";
+        button.textContent = "Edit";
+        return button;
+    }
+
+    function buildSaveButton() {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-sm btn-primary";
+        button.textContent = "Save";
+        return button;
+    }
+
+    function buildCancelButton() {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-sm btn-outline-secondary";
+        button.textContent = "Cancel";
+        return button;
+    }
+
     async function completeTaskItem(itemId) {
         const response = await fetch(`/api/TaskItems/${itemId}/complete`, {
             method: "PATCH",
@@ -68,6 +93,21 @@
         }
     }
 
+    async function updateTaskItem(itemId, title, isDone) {
+        const response = await fetch(`/api/TaskItems/${itemId}`, {
+            method: "PUT",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ title: title, isDone: isDone })
+        });
+
+        if (!response.ok) {
+            throw new Error("Update failed with status " + response.status + ".");
+        }
+    }
+
     function renderList(items) {
         for (const item of items) {
             const row = document.createElement("div");
@@ -76,22 +116,82 @@
             const content = document.createElement("div");
             content.className = "me-3";
 
-            const title = document.createElement("h2");
-            title.className = "h6 mb-1";
-            title.textContent = item.title;
+            const isEditingRow = editingTaskItemId === item.id;
+
+            let editTitleInput = null;
+
+            if (isEditingRow) {
+                editTitleInput = document.createElement("input");
+                editTitleInput.type = "text";
+                editTitleInput.className = "form-control form-control-sm";
+                editTitleInput.value = item.title;
+                editTitleInput.maxLength = 200;
+                editTitleInput.autocomplete = "off";
+                editTitleInput.setAttribute("aria-label", "Edit title for task " + item.id);
+                content.appendChild(editTitleInput);
+            } else {
+                const title = document.createElement("h2");
+                title.className = "h6 mb-1";
+                title.textContent = item.title;
+                content.appendChild(title);
+            }
 
             const meta = document.createElement("p");
             meta.className = "mb-0 text-muted small";
             meta.textContent = "Task #" + item.id;
 
-            content.appendChild(title);
             content.appendChild(meta);
 
             const actions = document.createElement("div");
             actions.className = "d-flex align-items-center gap-2";
             actions.appendChild(buildStatusBadge(Boolean(item.isDone)));
 
-            if (!item.isDone) {
+            if (isEditingRow && editTitleInput) {
+                const saveButton = buildSaveButton();
+                const cancelButton = buildCancelButton();
+
+                saveButton.addEventListener("click", async function () {
+                    const nextTitle = editTitleInput.value.trim();
+
+                    if (!nextTitle) {
+                        errorEl.textContent = "Title is required.";
+                        setVisible(errorEl, true);
+                        return;
+                    }
+
+                    setVisible(errorEl, false);
+                    errorEl.textContent = "";
+                    saveButton.disabled = true;
+                    cancelButton.disabled = true;
+                    saveButton.textContent = "Saving...";
+
+                    try {
+                        await updateTaskItem(item.id, nextTitle, Boolean(item.isDone));
+                        editingTaskItemId = null;
+                        await loadTaskItems();
+                    } catch (error) {
+                        saveButton.disabled = false;
+                        cancelButton.disabled = false;
+                        saveButton.textContent = "Save";
+                        errorEl.textContent = "Unable to save task item.";
+                        setVisible(errorEl, true);
+                    }
+                });
+
+                cancelButton.addEventListener("click", async function () {
+                    editingTaskItemId = null;
+
+                    try {
+                        await loadTaskItems();
+                    } catch (error) {
+                        errorEl.textContent = "Unable to refresh task items. Please reload.";
+                        setVisible(errorEl, true);
+                    }
+                });
+
+                actions.appendChild(saveButton);
+                actions.appendChild(cancelButton);
+            } else if (!item.isDone) {
                 const completeButton = buildCompleteButton();
 
                 completeButton.addEventListener("click", async function () {
@@ -123,6 +223,29 @@
                 });
 
                 actions.appendChild(completeButton);
+            }
+
+            if (!isEditingRow) {
+                const editButton = buildEditButton();
+                editButton.disabled = editingTaskItemId !== null;
+
+                editButton.addEventListener("click", async function () {
+                    if (editingTaskItemId !== null) {
+                        return;
+                    }
+
+                    editingTaskItemId = item.id;
+
+                    try {
+                        await loadTaskItems();
+                    } catch (error) {
+                        editingTaskItemId = null;
+                        errorEl.textContent = "Unable to start editing task item.";
+                        setVisible(errorEl, true);
+                    }
+                });
+
+                actions.appendChild(editButton);
             }
 
             row.appendChild(content);

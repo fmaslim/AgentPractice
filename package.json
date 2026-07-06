@@ -1,0 +1,11 @@
+{
+  "name": "agentpractice-frontend-tests",
+  "private": true,
+  "scripts": {
+    "test:frontend": "vitest run AgentPractice.Web/frontend-tests/task-items.inline-edit.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0",
+    "vitest": "^2.1.8"
+  }
+}
