@@ -11,6 +11,11 @@ public class HomeController : Controller
         return View();
     }
 
+    public IActionResult TaskItems()
+    {
+        return View();
+    }
+
     public IActionResult Status()
     {
         var model = new StatusSummary
