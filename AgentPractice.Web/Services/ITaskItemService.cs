@@ -11,4 +11,6 @@ public interface ITaskItemService
     TaskItem CreateTaskItem(string title);
 
     TaskItem? UpdateTaskItem(int id, string title, bool isDone);
+
+    bool DeleteTaskItem(int id);
 }

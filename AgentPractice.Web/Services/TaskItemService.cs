@@ -51,4 +51,18 @@ public class TaskItemService : ITaskItemService
 
         return existingItem;
     }
+
+    public bool DeleteTaskItem(int id)
+    {
+        var existingItem = _taskItems.FirstOrDefault(taskItem => taskItem.Id == id);
+
+        if (existingItem is null)
+        {
+            return false;
+        }
+
+        _taskItems.Remove(existingItem);
+
+        return true;
+    }
 }

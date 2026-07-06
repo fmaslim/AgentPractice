@@ -66,4 +66,22 @@ public class TaskItemsController : ControllerBase
 
         return Ok(updatedItem);
     }
+
+    [HttpDelete("{id:int}")]
+    public IActionResult Delete(int id)
+    {
+        if (id <= 0)
+        {
+            return BadRequest();
+        }
+
+        var deleted = _taskItemService.DeleteTaskItem(id);
+
+        if (!deleted)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
 }

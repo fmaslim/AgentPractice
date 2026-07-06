@@ -147,4 +147,48 @@ public class TaskItemsEndpointTests : IClassFixture<WebApplicationFactory<Progra
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    [Fact]
+    public async Task DeleteTaskItem_WithExistingId_ReturnsNoContent()
+    {
+        var response = await _client.DeleteAsync("/api/taskitems/2");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteTaskItem_WithExistingId_ItemIsGone()
+    {
+        var deleteResponse = await _client.DeleteAsync("/api/taskitems/3");
+
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        var getResponse = await _client.GetAsync("/api/taskitems/3");
+
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteTaskItem_WithMissingId_ReturnsNotFound()
+    {
+        var response = await _client.DeleteAsync("/api/taskitems/999");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteTaskItem_WithNonPositiveId_ReturnsBadRequest()
+    {
+        var response = await _client.DeleteAsync("/api/taskitems/0");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteTaskItem_WithNegativeId_ReturnsBadRequest()
+    {
+        var response = await _client.DeleteAsync("/api/taskitems/-1");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }
