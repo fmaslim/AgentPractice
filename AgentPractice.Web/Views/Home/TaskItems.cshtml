@@ -6,47 +6,25 @@
     <div class="col-12 col-lg-9">
         <div class="d-flex align-items-center justify-content-between mb-3">
             <h1 class="h3 mb-0">Task Items</h1>
-            <span class="badge text-bg-secondary">Static Demo</span>
+            <span class="badge text-bg-secondary">Read-Only</span>
         </div>
 
-        <p class="text-muted">This page is a simple static UI representation and is not connected to any API.</p>
+        <p class="text-muted">This page loads task items from <code>/api/TaskItems</code>.</p>
 
-        <div class="list-group shadow-sm">
-            <div class="list-group-item d-flex justify-content-between align-items-start py-3">
-                <div class="me-3">
-                    <h2 class="h6 mb-1">Set up homepage copy</h2>
-                    <p class="mb-0 text-muted small">Update the welcome content to reflect the product purpose.</p>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge text-bg-warning">In Progress</span>
-                    <button type="button" class="btn btn-sm btn-outline-primary">Edit</button>
-                    <button type="button" class="btn btn-sm btn-outline-danger">Delete</button>
-                </div>
-            </div>
-
-            <div class="list-group-item d-flex justify-content-between align-items-start py-3">
-                <div class="me-3">
-                    <h2 class="h6 mb-1">Add health endpoint docs</h2>
-                    <p class="mb-0 text-muted small">Document request and response examples for monitoring.</p>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge text-bg-success">Done</span>
-                    <button type="button" class="btn btn-sm btn-outline-primary">Edit</button>
-                    <button type="button" class="btn btn-sm btn-outline-danger">Delete</button>
-                </div>
-            </div>
-
-            <div class="list-group-item d-flex justify-content-between align-items-start py-3">
-                <div class="me-3">
-                    <h2 class="h6 mb-1">Create basic task list UI</h2>
-                    <p class="mb-0 text-muted small">Build a static Razor page using Bootstrap-first styling.</p>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge text-bg-secondary">Planned</span>
-                    <button type="button" class="btn btn-sm btn-outline-primary">Edit</button>
-                    <button type="button" class="btn btn-sm btn-outline-danger">Delete</button>
-                </div>
-            </div>
+        <div id="task-items-loading" class="alert alert-secondary" role="status" aria-live="polite">
+            Loading task items...
         </div>
+
+        <div id="task-items-error" class="alert alert-danger d-none" role="alert"></div>
+
+        <div id="task-items-empty" class="alert alert-info d-none" role="status" aria-live="polite">
+            No task items found.
+        </div>
+
+        <div id="task-items-list" class="list-group shadow-sm d-none" aria-live="polite"></div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/task-items.js" asp-append-version="true"></script>
+}
