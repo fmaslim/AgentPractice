@@ -17,7 +17,7 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task GetTaskItemsPage_ReturnsOk_AndReadOnlyHeader()
+    public async Task GetTaskItemsPage_ReturnsOk_AndCreateViewHeader()
     {
         var response = await _client.GetAsync("/Home/TaskItems");
 
@@ -26,12 +26,12 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Contains("Task Items", html);
-        Assert.Contains("Read-Only", html);
+        Assert.Contains("Create + View", html);
         Assert.Contains("/api/TaskItems", html);
     }
 
     [Fact]
-    public async Task GetTaskItemsPage_ContainsLoadingEmptyAndErrorStates()
+    public async Task GetTaskItemsPage_ContainsCreateLoadingEmptyAndErrorStates()
     {
         var response = await _client.GetAsync("/Home/TaskItems");
 
@@ -39,6 +39,11 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
 
         var html = await response.Content.ReadAsStringAsync();
 
+        Assert.Contains("id=\"task-item-create-form\"", html);
+        Assert.Contains("id=\"task-item-title\"", html);
+        Assert.Contains("id=\"task-item-add-button\"", html);
+        Assert.Contains("id=\"task-item-create-success\"", html);
+        Assert.Contains("id=\"task-item-create-error\"", html);
         Assert.Contains("id=\"task-items-loading\"", html);
         Assert.Contains("Loading task items", html);
         Assert.Contains("id=\"task-items-empty\"", html);
@@ -64,7 +69,7 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task GetTaskItemsScript_UsesApiGetAndMapsIsDoneToBadges()
+    public async Task GetTaskItemsScript_UsesApiGetPostValidationAndMapsIsDoneToBadges()
     {
         var response = await _client.GetAsync("/js/task-items.js");
 
@@ -72,6 +77,20 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
 
         var script = await response.Content.ReadAsStringAsync();
 
+        Assert.Contains("createFormEl.addEventListener(\"submit\"", script);
+        Assert.Contains("let isSubmittingCreate = false;", script);
+        Assert.Contains("if (isSubmittingCreate)", script);
+        Assert.Contains("if (!title)", script);
+        Assert.Contains("Title is required.", script);
+        Assert.Contains("fetch(\"/api/TaskItems\"", script);
+        Assert.Contains("method: \"POST\"", script);
+        Assert.Contains("JSON.stringify({ title: title })", script);
+        Assert.Contains("isSubmittingCreate = true;", script);
+        Assert.Contains("isSubmittingCreate = false;", script);
+        Assert.Contains("addButtonEl.disabled = isSubmitting", script);
+        Assert.Contains("await loadTaskItems();", script);
+        Assert.Contains("titleInputEl.value = \"\";", script);
+        Assert.Contains("createSuccessEl.textContent = \"Task item created.\";", script);
         Assert.Contains("fetch(\"/api/TaskItems\"", script);
         Assert.Contains("method: \"GET\"", script);
         Assert.Contains("buildStatusBadge(Boolean(item.isDone))", script);

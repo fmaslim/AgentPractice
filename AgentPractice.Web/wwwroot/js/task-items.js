@@ -1,12 +1,19 @@
 (function () {
+    const createFormEl = document.getElementById("task-item-create-form");
+    const titleInputEl = document.getElementById("task-item-title");
+    const addButtonEl = document.getElementById("task-item-add-button");
+    const createSuccessEl = document.getElementById("task-item-create-success");
+    const createErrorEl = document.getElementById("task-item-create-error");
     const loadingEl = document.getElementById("task-items-loading");
     const errorEl = document.getElementById("task-items-error");
     const emptyEl = document.getElementById("task-items-empty");
     const listEl = document.getElementById("task-items-list");
 
-    if (!loadingEl || !errorEl || !emptyEl || !listEl) {
+    if (!createFormEl || !titleInputEl || !addButtonEl || !createSuccessEl || !createErrorEl || !loadingEl || !errorEl || !emptyEl || !listEl) {
         return;
     }
+
+    let isSubmittingCreate = false;
 
     function setVisible(element, visible) {
         element.classList.toggle("d-none", !visible);
@@ -19,6 +26,18 @@
         setVisible(listEl, false);
         errorEl.textContent = "";
         listEl.innerHTML = "";
+    }
+
+    function clearCreateFeedback() {
+        createSuccessEl.textContent = "";
+        createErrorEl.textContent = "";
+        setVisible(createSuccessEl, false);
+        setVisible(createErrorEl, false);
+    }
+
+    function setCreateSubmitting(isSubmitting) {
+        addButtonEl.disabled = isSubmitting;
+        addButtonEl.textContent = isSubmitting ? "Adding..." : "Add";
     }
 
     function buildStatusBadge(isDone) {
@@ -90,6 +109,56 @@
             setVisible(errorEl, true);
         }
     }
+
+    async function createTaskItem(title) {
+        const response = await fetch("/api/TaskItems", {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ title: title })
+        });
+
+        if (!response.ok) {
+            throw new Error("Create failed with status " + response.status + ".");
+        }
+    }
+
+    createFormEl.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        if (isSubmittingCreate) {
+            return;
+        }
+
+        clearCreateFeedback();
+
+        const title = titleInputEl.value.trim();
+
+        if (!title) {
+            createErrorEl.textContent = "Title is required.";
+            setVisible(createErrorEl, true);
+            return;
+        }
+
+        try {
+            isSubmittingCreate = true;
+            setCreateSubmitting(true);
+            await createTaskItem(title);
+            await loadTaskItems();
+
+            titleInputEl.value = "";
+            createSuccessEl.textContent = "Task item created.";
+            setVisible(createSuccessEl, true);
+        } catch (error) {
+            createErrorEl.textContent = "Unable to create task item. " + (error instanceof Error ? error.message : "Please try again.");
+            setVisible(createErrorEl, true);
+        } finally {
+            isSubmittingCreate = false;
+            setCreateSubmitting(false);
+        }
+    });
 
     loadTaskItems();
 })();

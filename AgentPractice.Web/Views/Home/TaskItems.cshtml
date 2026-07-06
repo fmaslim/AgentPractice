@@ -6,10 +6,30 @@
     <div class="col-12 col-lg-9">
         <div class="d-flex align-items-center justify-content-between mb-3">
             <h1 class="h3 mb-0">Task Items</h1>
-            <span class="badge text-bg-secondary">Read-Only</span>
+            <span class="badge text-bg-primary">Create + View</span>
         </div>
 
-        <p class="text-muted">This page loads task items from <code>/api/TaskItems</code>.</p>
+        <p class="text-muted">This page creates and loads task items using <code>/api/TaskItems</code>.</p>
+
+        <form id="task-item-create-form" class="card shadow-sm mb-3" novalidate>
+            <div class="card-body">
+                <label for="task-item-title" class="form-label">New task title</label>
+                <div class="input-group">
+                    <input
+                        id="task-item-title"
+                        name="title"
+                        type="text"
+                        class="form-control"
+                        placeholder="Enter a task title"
+                        autocomplete="off"
+                        maxlength="200" />
+                    <button id="task-item-add-button" type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </div>
+        </form>
+
+        <div id="task-item-create-success" class="alert alert-success d-none" role="status" aria-live="polite"></div>
+        <div id="task-item-create-error" class="alert alert-danger d-none" role="alert"></div>
 
         <div id="task-items-loading" class="alert alert-secondary" role="status" aria-live="polite">
             Loading task items...
