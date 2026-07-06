@@ -84,4 +84,22 @@ public class TaskItemsController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPatch("{id:int}/complete")]
+    public ActionResult<TaskItem> Complete(int id)
+    {
+        if (id <= 0)
+        {
+            return BadRequest();
+        }
+
+        var completedItem = _taskItemService.CompleteTaskItem(id);
+
+        if (completedItem is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(completedItem);
+    }
 }

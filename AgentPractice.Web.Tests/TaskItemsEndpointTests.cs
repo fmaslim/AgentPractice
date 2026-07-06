@@ -191,4 +191,60 @@ public class TaskItemsEndpointTests : IClassFixture<WebApplicationFactory<Progra
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    [Fact]
+    public async Task CompleteTaskItem_WithExistingId_ReturnsOk()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/taskitems/3/complete");
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CompleteTaskItem_WithExistingId_SetsIsDoneTrue()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/taskitems/3/complete");
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var item = await response.Content.ReadFromJsonAsync<TaskItem>();
+
+        Assert.NotNull(item);
+        Assert.Equal(3, item.Id);
+        Assert.True(item.IsDone);
+    }
+
+    [Fact]
+    public async Task CompleteTaskItem_WithMissingId_ReturnsNotFound()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/taskitems/999/complete");
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CompleteTaskItem_WithNonPositiveId_ReturnsBadRequest()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/taskitems/0/complete");
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CompleteTaskItem_WithNegativeId_ReturnsBadRequest()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/taskitems/-1/complete");
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }

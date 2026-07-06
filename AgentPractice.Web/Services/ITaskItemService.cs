@@ -13,4 +13,6 @@ public interface ITaskItemService
     TaskItem? UpdateTaskItem(int id, string title, bool isDone);
 
     bool DeleteTaskItem(int id);
+
+    TaskItem? CompleteTaskItem(int id);
 }

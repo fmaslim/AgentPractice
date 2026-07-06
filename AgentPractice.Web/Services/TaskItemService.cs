@@ -65,4 +65,18 @@ public class TaskItemService : ITaskItemService
 
         return true;
     }
+
+    public TaskItem? CompleteTaskItem(int id)
+    {
+        var existingItem = _taskItems.FirstOrDefault(taskItem => taskItem.Id == id);
+
+        if (existingItem is null)
+        {
+            return null;
+        }
+
+        existingItem.IsDone = true;
+
+        return existingItem;
+    }
 }
