@@ -53,7 +53,7 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task GetTaskItemsPage_DoesNotContainOutOfScopeControls()
+    public async Task GetTaskItemsPage_DoesNotContainUnplannedListControls()
     {
         var response = await _client.GetAsync("/Home/TaskItems");
 
@@ -61,8 +61,6 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
 
         var html = await response.Content.ReadAsStringAsync();
 
-        Assert.DoesNotContain(">Delete<", html);
-        Assert.DoesNotContain("btn-outline-danger", html);
         Assert.DoesNotContain("Filter", html);
         Assert.DoesNotContain("Sort", html);
         Assert.DoesNotContain("Pagination", html);
@@ -100,10 +98,17 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("button.textContent = \"Edit\"", script);
         Assert.Contains("button.textContent = \"Save\"", script);
         Assert.Contains("button.textContent = \"Cancel\"", script);
+        Assert.Contains("button.textContent = \"Delete\"", script);
         Assert.Contains("fetch(`/api/TaskItems/${itemId}`", script);
         Assert.Contains("method: \"PUT\"", script);
         Assert.Contains("JSON.stringify({ title: title, isDone: isDone })", script);
         Assert.Contains("await updateTaskItem(item.id, nextTitle, Boolean(item.isDone));", script);
+        Assert.Contains("const shouldDelete = window.confirm(\"Delete this task item?\");", script);
+        Assert.Contains("if (!shouldDelete)", script);
+        Assert.Contains("method: \"DELETE\"", script);
+        Assert.Contains("await deleteTaskItem(item.id);", script);
+        Assert.Contains("deleteButton.textContent = \"Deleting...\";", script);
+        Assert.Contains("errorEl.textContent = \"Unable to delete task item.\";", script);
         Assert.Contains("editingTaskItemId = item.id;", script);
         Assert.Contains("editingTaskItemId = null;", script);
         Assert.Contains("errorEl.textContent = \"Unable to save task item.\";", script);

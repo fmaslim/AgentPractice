@@ -235,3 +235,219 @@ describe("task-items inline edit behavior", () => {
         expect(putCalls.length).toBe(0);
     });
 });
+
+describe("task-items delete behavior", () => {
+    beforeEach(() => {
+        vi.restoreAllMocks();
+        buildPageShell();
+    });
+
+    it("canceling confirm does nothing", async () => {
+        const items = [{ id: 1, title: "First task", isDone: false }];
+        const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            if (url === "/api/TaskItems" && (!options.method || options.method === "GET")) {
+                return createJsonResponse(items);
+            }
+
+            throw new Error(`Unexpected fetch: ${options.method ?? "GET"} ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const deleteButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Delete");
+        expect(deleteButton).toBeTruthy();
+        deleteButton.click();
+
+        expect(confirmSpy).toHaveBeenCalledOnce();
+
+        const deleteCalls = global.fetch.mock.calls.filter(([url, options]) =>
+            url === "/api/TaskItems/1" && options?.method === "DELETE"
+        );
+
+        expect(deleteCalls.length).toBe(0);
+
+        const getCalls = global.fetch.mock.calls.filter(([url, options]) =>
+            url === "/api/TaskItems" && (!options?.method || options.method === "GET")
+        );
+
+        expect(getCalls.length).toBe(1);
+    });
+
+    it("confirming calls DELETE /api/TaskItems/{id}", async () => {
+        const items = [{ id: 1, title: "First task", isDone: false }];
+
+        vi.spyOn(window, "confirm").mockReturnValue(true);
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            const method = options.method ?? "GET";
+
+            if (url === "/api/TaskItems" && method === "GET") {
+                return createJsonResponse(items);
+            }
+
+            if (url === "/api/TaskItems/1" && method === "DELETE") {
+                return {
+                    ok: true,
+                    status: 204,
+                    json: async () => null
+                };
+            }
+
+            throw new Error(`Unexpected fetch: ${method} ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const deleteButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Delete");
+        expect(deleteButton).toBeTruthy();
+        deleteButton.click();
+
+        await vi.waitFor(() => {
+            const deleteCall = global.fetch.mock.calls.find(([url, options]) =>
+                url === "/api/TaskItems/1" && options?.method === "DELETE"
+            );
+            expect(deleteCall).toBeTruthy();
+        });
+    });
+
+    it("successful delete reloads task list", async () => {
+        const initialItems = [
+            { id: 1, title: "First task", isDone: false },
+            { id: 2, title: "Second task", isDone: false }
+        ];
+        const afterDeleteItems = [{ id: 2, title: "Second task", isDone: false }];
+
+        let getCount = 0;
+
+        vi.spyOn(window, "confirm").mockReturnValue(true);
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            const method = options.method ?? "GET";
+
+            if (url === "/api/TaskItems" && method === "GET") {
+                getCount += 1;
+                return createJsonResponse(getCount >= 2 ? afterDeleteItems : initialItems);
+            }
+
+            if (url === "/api/TaskItems/1" && method === "DELETE") {
+                return {
+                    ok: true,
+                    status: 204,
+                    json: async () => null
+                };
+            }
+
+            throw new Error(`Unexpected fetch: ${method} ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const deleteButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Delete");
+        expect(deleteButton).toBeTruthy();
+        deleteButton.click();
+
+        await vi.waitFor(() => {
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            expect(rows.length).toBe(1);
+            expect(rows[0].textContent).toContain("Task #2");
+        });
+
+        const getCalls = global.fetch.mock.calls.filter(([url, options]) =>
+            url === "/api/TaskItems" && (options?.method ?? "GET") === "GET"
+        );
+
+        expect(getCalls.length).toBe(2);
+    });
+
+    it("failed delete shows error message", async () => {
+        const items = [{ id: 1, title: "First task", isDone: false }];
+
+        vi.spyOn(window, "confirm").mockReturnValue(true);
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            const method = options.method ?? "GET";
+
+            if (url === "/api/TaskItems" && method === "GET") {
+                return createJsonResponse(items);
+            }
+
+            if (url === "/api/TaskItems/1" && method === "DELETE") {
+                return {
+                    ok: false,
+                    status: 500,
+                    json: async () => ({})
+                };
+            }
+
+            throw new Error(`Unexpected fetch: ${method} ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const deleteButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Delete");
+        expect(deleteButton).toBeTruthy();
+        deleteButton.click();
+
+        await vi.waitFor(() => {
+            const error = document.getElementById("task-items-error");
+            expect(error.textContent).toBe("Unable to delete task item.");
+            expect(error.classList.contains("d-none")).toBe(false);
+        });
+    });
+
+    it("row in edit mode does not show a Delete button", async () => {
+        const items = [
+            { id: 1, title: "First task", isDone: false },
+            { id: 2, title: "Second task", isDone: false }
+        ];
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            if (url === "/api/TaskItems" && (!options.method || options.method === "GET")) {
+                return createJsonResponse(items);
+            }
+
+            throw new Error(`Unexpected fetch: ${options.method ?? "GET"} ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const firstEditButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Edit");
+        expect(firstEditButton).toBeTruthy();
+        firstEditButton.click();
+
+        await vi.waitFor(() => {
+            const editInput = document.querySelector("input[aria-label='Edit title for task 1']");
+            expect(editInput).toBeTruthy();
+        });
+
+        const rows = Array.from(document.querySelectorAll("#task-items-list .list-group-item"));
+        const editingRow = rows.find(row => row.textContent.includes("Task #1"));
+        const nonEditingRow = rows.find(row => row.textContent.includes("Task #2"));
+
+        expect(editingRow).toBeTruthy();
+        expect(nonEditingRow).toBeTruthy();
+
+        const editingRowButtons = Array.from(editingRow.querySelectorAll("button")).map(button => button.textContent);
+        const nonEditingRowButtons = Array.from(nonEditingRow.querySelectorAll("button")).map(button => button.textContent);
+
+        expect(editingRowButtons).not.toContain("Delete");
+        expect(nonEditingRowButtons).toContain("Delete");
+    });
+});

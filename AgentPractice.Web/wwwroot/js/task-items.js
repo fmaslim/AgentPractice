@@ -80,6 +80,14 @@
         return button;
     }
 
+    function buildDeleteButton() {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-sm btn-outline-danger";
+        button.textContent = "Delete";
+        return button;
+    }
+
     async function completeTaskItem(itemId) {
         const response = await fetch(`/api/TaskItems/${itemId}/complete`, {
             method: "PATCH",
@@ -105,6 +113,19 @@
 
         if (!response.ok) {
             throw new Error("Update failed with status " + response.status + ".");
+        }
+    }
+
+    async function deleteTaskItem(itemId) {
+        const response = await fetch(`/api/TaskItems/${itemId}`, {
+            method: "DELETE",
+            headers: {
+                Accept: "application/json"
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error("Delete failed with status " + response.status + ".");
         }
     }
 
@@ -246,6 +267,43 @@
                 });
 
                 actions.appendChild(editButton);
+
+                const deleteButton = buildDeleteButton();
+
+                deleteButton.addEventListener("click", async function () {
+                    setVisible(errorEl, false);
+                    errorEl.textContent = "";
+
+                    const shouldDelete = window.confirm("Delete this task item?");
+
+                    if (!shouldDelete) {
+                        return;
+                    }
+
+                    deleteButton.disabled = true;
+                    deleteButton.textContent = "Deleting...";
+
+                    try {
+                        await deleteTaskItem(item.id);
+                    } catch (error) {
+                        deleteButton.disabled = false;
+                        deleteButton.textContent = "Delete";
+                        errorEl.textContent = "Unable to delete task item.";
+                        setVisible(errorEl, true);
+                        return;
+                    }
+
+                    try {
+                        await loadTaskItems();
+                    } catch (error) {
+                        deleteButton.disabled = false;
+                        deleteButton.textContent = "Delete";
+                        errorEl.textContent = "Task deleted, but the list could not be refreshed. Please reload.";
+                        setVisible(errorEl, true);
+                    }
+                });
+
+                actions.appendChild(deleteButton);
             }
 
             row.appendChild(content);
