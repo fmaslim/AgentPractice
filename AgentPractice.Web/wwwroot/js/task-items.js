@@ -9,14 +9,17 @@
     const emptyEl = document.getElementById("task-items-empty");
     const listEl = document.getElementById("task-items-list");
     const filterButtonEls = Array.from(document.querySelectorAll("[data-task-filter]"));
+    const searchInputEl = document.getElementById("task-items-search");
+    const clearSearchButtonEl = document.getElementById("task-items-clear-search");
 
-    if (!createFormEl || !titleInputEl || !addButtonEl || !createSuccessEl || !createErrorEl || !loadingEl || !errorEl || !emptyEl || !listEl) {
+    if (!createFormEl || !titleInputEl || !addButtonEl || !createSuccessEl || !createErrorEl || !loadingEl || !errorEl || !emptyEl || !listEl || !searchInputEl || !clearSearchButtonEl) {
         return;
     }
 
     let isSubmittingCreate = false;
     let editingTaskItemId = null;
     let selectedFilter = "all";
+    let searchTerm = "";
     let taskItems = [];
 
     function setVisible(element, visible) {
@@ -58,16 +61,49 @@
         }
     }
 
+    function setSearchButtonState() {
+        const hasSearchText = searchTerm.trim().length > 0;
+        setVisible(clearSearchButtonEl, hasSearchText);
+    }
+
     function getVisibleItems(items) {
-        if (selectedFilter === "open") {
-            return items.filter(item => !item.isDone);
+        const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+
+        const statusFilteredItems = items.filter(item => {
+            if (selectedFilter === "open") {
+                return !item.isDone;
+            }
+
+            if (selectedFilter === "done") {
+                return Boolean(item.isDone);
+            }
+
+            return true;
+        });
+
+        if (!normalizedSearchTerm) {
+            return statusFilteredItems;
         }
 
-        if (selectedFilter === "done") {
-            return items.filter(item => Boolean(item.isDone));
+        return statusFilteredItems.filter(item =>
+            String(item.title ?? "").toLowerCase().includes(normalizedSearchTerm)
+        );
+    }
+
+    function handleSearchInput() {
+        searchTerm = searchInputEl.value || "";
+        renderTaskItems();
+    }
+
+    function clearSearch() {
+        if (!searchInputEl.value && !searchTerm) {
+            return;
         }
 
-        return items;
+        searchInputEl.value = "";
+        searchTerm = "";
+        renderTaskItems();
+        searchInputEl.focus();
     }
 
     function buildStatusBadge(isDone) {
@@ -344,6 +380,7 @@
     function renderTaskItems() {
         clearListState();
         setFilterButtonState();
+        setSearchButtonState();
 
         if (!Array.isArray(taskItems) || taskItems.length === 0) {
             setVisible(emptyEl, true);
@@ -451,6 +488,9 @@
             renderTaskItems();
         });
     }
+
+    searchInputEl.addEventListener("input", handleSearchInput);
+    clearSearchButtonEl.addEventListener("click", clearSearch);
 
     setFilterButtonState();
 

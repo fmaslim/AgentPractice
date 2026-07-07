@@ -18,6 +18,8 @@ function buildPageShell() {
             <button id="task-items-filter-open" type="button" data-task-filter="open" aria-pressed="false"></button>
             <button id="task-items-filter-done" type="button" data-task-filter="done" aria-pressed="false"></button>
         </div>
+        <input id="task-items-search" type="search" />
+        <button id="task-items-clear-search" type="button" class="d-none">Clear Search</button>
         <div id="task-items-loading"></div>
         <div id="task-items-error" class="d-none"></div>
         <div id="task-items-empty" class="d-none"></div>
@@ -100,6 +102,120 @@ describe("task-items inline edit behavior", () => {
             const rows = document.querySelectorAll("#task-items-list .list-group-item");
             expect(rows.length).toBe(3);
             expect(allButton.getAttribute("aria-pressed")).toBe("true");
+        });
+
+        const getCalls = global.fetch.mock.calls.filter(([url, options]) =>
+            url === "/api/TaskItems" && (!options?.method || options.method === "GET")
+        );
+
+        expect(getCalls.length).toBe(1);
+    });
+
+    it("applies title search with status filter without refetching", async () => {
+        const items = [
+            { id: 1, title: "Buy milk", isDone: false },
+            { id: 2, title: "Pay bills", isDone: true },
+            { id: 3, title: "Milk delivery", isDone: true }
+        ];
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            if (url === "/api/TaskItems" && (!options.method || options.method === "GET")) {
+                return createJsonResponse(items);
+            }
+
+            throw new Error(`Unexpected fetch: ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const searchInput = document.getElementById("task-items-search");
+        const doneButton = document.getElementById("task-items-filter-done");
+
+        searchInput.value = "milk";
+        searchInput.dispatchEvent(new Event("input"));
+
+        await vi.waitFor(() => {
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            expect(rows.length).toBe(2);
+            expect(document.getElementById("task-items-list").textContent).toContain("Buy milk");
+            expect(document.getElementById("task-items-list").textContent).toContain("Milk delivery");
+            expect(document.getElementById("task-items-list").textContent).not.toContain("Pay bills");
+        });
+
+        doneButton.click();
+
+        await vi.waitFor(() => {
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            expect(rows.length).toBe(1);
+            expect(document.getElementById("task-items-list").textContent).toContain("Milk delivery");
+            expect(document.getElementById("task-items-list").textContent).not.toContain("Buy milk");
+            expect(doneButton.getAttribute("aria-pressed")).toBe("true");
+        });
+
+        const getCalls = global.fetch.mock.calls.filter(([url, options]) =>
+            url === "/api/TaskItems" && (!options?.method || options.method === "GET")
+        );
+
+        expect(getCalls.length).toBe(1);
+    });
+
+    it("shows clear search button only with text and clears immediately while keeping selected status filter", async () => {
+        const items = [
+            { id: 1, title: "Buy milk", isDone: false },
+            { id: 2, title: "Milk delivery", isDone: true },
+            { id: 3, title: "Pay bills", isDone: true }
+        ];
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            if (url === "/api/TaskItems" && (!options.method || options.method === "GET")) {
+                return createJsonResponse(items);
+            }
+
+            throw new Error(`Unexpected fetch: ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const doneButton = document.getElementById("task-items-filter-done");
+        const searchInput = document.getElementById("task-items-search");
+        const clearButton = document.getElementById("task-items-clear-search");
+
+        expect(clearButton.classList.contains("d-none")).toBe(true);
+
+        doneButton.click();
+
+        await vi.waitFor(() => {
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            expect(rows.length).toBe(2);
+            expect(doneButton.getAttribute("aria-pressed")).toBe("true");
+        });
+
+        searchInput.value = "milk";
+        searchInput.dispatchEvent(new Event("input"));
+
+        await vi.waitFor(() => {
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            expect(rows.length).toBe(1);
+            expect(document.getElementById("task-items-list").textContent).toContain("Milk delivery");
+            expect(clearButton.classList.contains("d-none")).toBe(false);
+        });
+
+        clearButton.click();
+
+        await vi.waitFor(() => {
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            expect(rows.length).toBe(2);
+            expect(searchInput.value).toBe("");
+            expect(doneButton.getAttribute("aria-pressed")).toBe("true");
+            expect(document.getElementById("task-items-list").textContent).toContain("Milk delivery");
+            expect(document.getElementById("task-items-list").textContent).toContain("Pay bills");
+            expect(clearButton.classList.contains("d-none")).toBe(true);
         });
 
         const getCalls = global.fetch.mock.calls.filter(([url, options]) =>
