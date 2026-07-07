@@ -20,6 +20,10 @@ function buildPageShell() {
         </div>
         <input id="task-items-search" type="search" />
         <button id="task-items-clear-search" type="button" class="d-none">Clear Search</button>
+        <select id="task-items-sort">
+            <option value="newest" selected>Newest first</option>
+            <option value="oldest">Oldest first</option>
+        </select>
         <button id="task-items-clear-completed" type="button" disabled>Clear completed</button>
         <div id="task-items-loading"></div>
         <div id="task-items-error" class="d-none"></div>
@@ -277,6 +281,60 @@ describe("task-items inline edit behavior", () => {
         });
     });
 
+    it("sorts by newest first by default and composes with filter and search", async () => {
+        const items = [
+            { id: 1, title: "Old open", isDone: false },
+            { id: 2, title: "Middle done", isDone: true },
+            { id: 3, title: "Newest open", isDone: false }
+        ];
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            if (url === "/api/TaskItems" && (!options.method || options.method === "GET")) {
+                return createJsonResponse(items);
+            }
+
+            throw new Error(`Unexpected fetch: ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const sortSelect = document.getElementById("task-items-sort");
+        const openButton = document.getElementById("task-items-filter-open");
+        const searchInput = document.getElementById("task-items-search");
+
+        await vi.waitFor(() => {
+            const rows = Array.from(document.querySelectorAll("#task-items-list .list-group-item"));
+            expect(rows.length).toBe(3);
+            expect(rows[0].textContent).toContain("Task #3");
+            expect(rows[1].textContent).toContain("Task #2");
+            expect(rows[2].textContent).toContain("Task #1");
+            expect(sortSelect.value).toBe("newest");
+        });
+
+        sortSelect.value = "oldest";
+        sortSelect.dispatchEvent(new Event("change"));
+
+        await vi.waitFor(() => {
+            const rows = Array.from(document.querySelectorAll("#task-items-list .list-group-item"));
+            expect(rows.length).toBe(3);
+            expect(rows[0].textContent).toContain("Task #1");
+            expect(rows[2].textContent).toContain("Task #3");
+        });
+
+        openButton.click();
+        searchInput.value = "newest";
+        searchInput.dispatchEvent(new Event("input"));
+
+        await vi.waitFor(() => {
+            const rows = Array.from(document.querySelectorAll("#task-items-list .list-group-item"));
+            expect(rows.length).toBe(1);
+            expect(rows[0].textContent).toContain("Task #3");
+        });
+    });
+
     it("only the clicked row enters edit mode", async () => {
         const items = [
             { id: 1, title: "First task", isDone: false },
@@ -296,10 +354,16 @@ describe("task-items inline edit behavior", () => {
 
         await waitForRender();
 
-        const editButtons = Array.from(document.querySelectorAll("button")).filter(button => button.textContent === "Edit");
-        expect(editButtons.length).toBe(2);
+        const rowForTask1 = Array.from(document.querySelectorAll("#task-items-list .list-group-item")).find(row =>
+            row.textContent.includes("Task #1")
+        );
+        expect(rowForTask1).toBeTruthy();
 
-        editButtons[0].click();
+        const editButtonForTask1 = Array.from(rowForTask1.querySelectorAll("button")).find(button =>
+            button.textContent === "Edit"
+        );
+        expect(editButtonForTask1).toBeTruthy();
+        editButtonForTask1.click();
 
         await vi.waitFor(() => {
             const editInputs = document.querySelectorAll("input[aria-label^='Edit title for task']");
@@ -348,9 +412,16 @@ describe("task-items inline edit behavior", () => {
 
         await waitForRender();
 
-        const firstEdit = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Edit");
-        expect(firstEdit).toBeTruthy();
-        firstEdit.click();
+        const rowForTask1 = Array.from(document.querySelectorAll("#task-items-list .list-group-item")).find(row =>
+            row.textContent.includes("Task #1")
+        );
+        expect(rowForTask1).toBeTruthy();
+
+        const editButtonForTask1 = Array.from(rowForTask1.querySelectorAll("button")).find(button =>
+            button.textContent === "Edit"
+        );
+        expect(editButtonForTask1).toBeTruthy();
+        editButtonForTask1.click();
 
         let titleInput;
         await vi.waitFor(() => {
@@ -398,9 +469,16 @@ describe("task-items inline edit behavior", () => {
 
         await waitForRender();
 
-        const editButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Edit");
-        expect(editButton).toBeTruthy();
-        editButton.click();
+        const rowForTask1 = Array.from(document.querySelectorAll("#task-items-list .list-group-item")).find(row =>
+            row.textContent.includes("Task #1")
+        );
+        expect(rowForTask1).toBeTruthy();
+
+        const editButtonForTask1 = Array.from(rowForTask1.querySelectorAll("button")).find(button =>
+            button.textContent === "Edit"
+        );
+        expect(editButtonForTask1).toBeTruthy();
+        editButtonForTask1.click();
 
         let titleInput;
         await vi.waitFor(() => {
@@ -446,9 +524,16 @@ describe("task-items inline edit behavior", () => {
 
         await waitForRender();
 
-        const editButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Edit");
-        expect(editButton).toBeTruthy();
-        editButton.click();
+        const rowForTask1 = Array.from(document.querySelectorAll("#task-items-list .list-group-item")).find(row =>
+            row.textContent.includes("Task #1")
+        );
+        expect(rowForTask1).toBeTruthy();
+
+        const editButtonForTask1 = Array.from(rowForTask1.querySelectorAll("button")).find(button =>
+            button.textContent === "Edit"
+        );
+        expect(editButtonForTask1).toBeTruthy();
+        editButtonForTask1.click();
 
         await vi.waitFor(() => {
             const editInput = document.querySelector("input[aria-label='Edit title for task 1']");
@@ -495,9 +580,16 @@ describe("task-items delete behavior", () => {
 
         await waitForRender();
 
-        const deleteButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Delete");
-        expect(deleteButton).toBeTruthy();
-        deleteButton.click();
+        const rowForTask1 = Array.from(document.querySelectorAll("#task-items-list .list-group-item")).find(row =>
+            row.textContent.includes("Task #1")
+        );
+        expect(rowForTask1).toBeTruthy();
+
+        const deleteButtonForTask1 = Array.from(rowForTask1.querySelectorAll("button")).find(button =>
+            button.textContent === "Delete"
+        );
+        expect(deleteButtonForTask1).toBeTruthy();
+        deleteButtonForTask1.click();
 
         expect(confirmSpy).toHaveBeenCalledOnce();
 
@@ -542,9 +634,16 @@ describe("task-items delete behavior", () => {
 
         await waitForRender();
 
-        const deleteButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Delete");
-        expect(deleteButton).toBeTruthy();
-        deleteButton.click();
+        const rowForTask1 = Array.from(document.querySelectorAll("#task-items-list .list-group-item")).find(row =>
+            row.textContent.includes("Task #1")
+        );
+        expect(rowForTask1).toBeTruthy();
+
+        const deleteButtonForTask1 = Array.from(rowForTask1.querySelectorAll("button")).find(button =>
+            button.textContent === "Delete"
+        );
+        expect(deleteButtonForTask1).toBeTruthy();
+        deleteButtonForTask1.click();
 
         await vi.waitFor(() => {
             const deleteCall = global.fetch.mock.calls.find(([url, options]) =>
@@ -589,9 +688,16 @@ describe("task-items delete behavior", () => {
 
         await waitForRender();
 
-        const deleteButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Delete");
-        expect(deleteButton).toBeTruthy();
-        deleteButton.click();
+        const rowForTask1 = Array.from(document.querySelectorAll("#task-items-list .list-group-item")).find(row =>
+            row.textContent.includes("Task #1")
+        );
+        expect(rowForTask1).toBeTruthy();
+
+        const deleteButtonForTask1 = Array.from(rowForTask1.querySelectorAll("button")).find(button =>
+            button.textContent === "Delete"
+        );
+        expect(deleteButtonForTask1).toBeTruthy();
+        deleteButtonForTask1.click();
 
         await vi.waitFor(() => {
             const rows = document.querySelectorAll("#task-items-list .list-group-item");
@@ -634,9 +740,16 @@ describe("task-items delete behavior", () => {
 
         await waitForRender();
 
-        const deleteButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Delete");
-        expect(deleteButton).toBeTruthy();
-        deleteButton.click();
+        const rowForTask1 = Array.from(document.querySelectorAll("#task-items-list .list-group-item")).find(row =>
+            row.textContent.includes("Task #1")
+        );
+        expect(rowForTask1).toBeTruthy();
+
+        const deleteButtonForTask1 = Array.from(rowForTask1.querySelectorAll("button")).find(button =>
+            button.textContent === "Delete"
+        );
+        expect(deleteButtonForTask1).toBeTruthy();
+        deleteButtonForTask1.click();
 
         await vi.waitFor(() => {
             const error = document.getElementById("task-items-error");
@@ -664,9 +777,16 @@ describe("task-items delete behavior", () => {
 
         await waitForRender();
 
-        const firstEditButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Edit");
-        expect(firstEditButton).toBeTruthy();
-        firstEditButton.click();
+        const rowForTask1 = Array.from(document.querySelectorAll("#task-items-list .list-group-item")).find(row =>
+            row.textContent.includes("Task #1")
+        );
+        expect(rowForTask1).toBeTruthy();
+
+        const editButtonForTask1 = Array.from(rowForTask1.querySelectorAll("button")).find(button =>
+            button.textContent === "Edit"
+        );
+        expect(editButtonForTask1).toBeTruthy();
+        editButtonForTask1.click();
 
         await vi.waitFor(() => {
             const editInput = document.querySelector("input[aria-label='Edit title for task 1']");
@@ -960,9 +1080,16 @@ describe("task-items filter persistence", () => {
             expect(listText).not.toContain("Open task");
         });
 
-        const deleteButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Delete");
-        expect(deleteButton).toBeTruthy();
-        deleteButton.click();
+        const rowForTask2 = Array.from(document.querySelectorAll("#task-items-list .list-group-item")).find(row =>
+            row.textContent.includes("Task #2")
+        );
+        expect(rowForTask2).toBeTruthy();
+
+        const deleteButtonForTask2 = Array.from(rowForTask2.querySelectorAll("button")).find(button =>
+            button.textContent === "Delete"
+        );
+        expect(deleteButtonForTask2).toBeTruthy();
+        deleteButtonForTask2.click();
 
         await vi.waitFor(() => {
             const rows = document.querySelectorAll("#task-items-list .list-group-item");

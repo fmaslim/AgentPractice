@@ -12,15 +12,17 @@
     const filterButtonEls = Array.from(document.querySelectorAll("[data-task-filter]"));
     const searchInputEl = document.getElementById("task-items-search");
     const clearSearchButtonEl = document.getElementById("task-items-clear-search");
+    const sortSelectEl = document.getElementById("task-items-sort");
     const clearCompletedButtonEl = document.getElementById("task-items-clear-completed");
 
-    if (!createFormEl || !titleInputEl || !addButtonEl || !createSuccessEl || !createErrorEl || !loadingEl || !errorEl || !countEl || !emptyEl || !listEl || !searchInputEl || !clearSearchButtonEl || !clearCompletedButtonEl) {
+    if (!createFormEl || !titleInputEl || !addButtonEl || !createSuccessEl || !createErrorEl || !loadingEl || !errorEl || !countEl || !emptyEl || !listEl || !searchInputEl || !clearSearchButtonEl || !sortSelectEl || !clearCompletedButtonEl) {
         return;
     }
 
     let isSubmittingCreate = false;
     let editingTaskItemId = null;
     let selectedFilter = "all";
+    let selectedSort = "newest";
     let searchTerm = "";
     let taskItems = [];
 
@@ -76,6 +78,10 @@
         setVisible(clearSearchButtonEl, hasSearchText);
     }
 
+    function setSortState() {
+        sortSelectEl.value = selectedSort;
+    }
+
     function setClearCompletedButtonState(items) {
         const hasCompletedItems = items.some(item => Boolean(item.isDone));
         clearCompletedButtonEl.disabled = !hasCompletedItems;
@@ -96,13 +102,22 @@
             return true;
         });
 
-        if (!normalizedSearchTerm) {
-            return statusFilteredItems;
-        }
+        const searchFilteredItems = normalizedSearchTerm
+            ? statusFilteredItems.filter(item =>
+                String(item.title ?? "").toLowerCase().includes(normalizedSearchTerm)
+            )
+            : statusFilteredItems;
 
-        return statusFilteredItems.filter(item =>
-            String(item.title ?? "").toLowerCase().includes(normalizedSearchTerm)
-        );
+        const sortedItems = searchFilteredItems.slice();
+        sortedItems.sort((a, b) => {
+            if (selectedSort === "oldest") {
+                return Number(a.id) - Number(b.id);
+            }
+
+            return Number(b.id) - Number(a.id);
+        });
+
+        return sortedItems;
     }
 
     function handleSearchInput() {
@@ -427,6 +442,7 @@
         clearListState();
         setFilterButtonState();
         setSearchButtonState();
+        setSortState();
         setClearCompletedButtonState(Array.isArray(taskItems) ? taskItems : []);
 
         const visibleItems = Array.isArray(taskItems) ? getVisibleItems(taskItems) : [];
@@ -539,6 +555,16 @@
 
     searchInputEl.addEventListener("input", handleSearchInput);
     clearSearchButtonEl.addEventListener("click", clearSearch);
+    sortSelectEl.addEventListener("change", function () {
+        const nextSort = sortSelectEl.value;
+
+        if (nextSort !== "newest" && nextSort !== "oldest") {
+            return;
+        }
+
+        selectedSort = nextSort;
+        renderTaskItems();
+    });
     clearCompletedButtonEl.addEventListener("click", clearCompletedTaskItems);
 
     setFilterButtonState();

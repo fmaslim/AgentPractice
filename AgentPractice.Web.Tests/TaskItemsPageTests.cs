@@ -50,6 +50,9 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("id=\"task-items-filter-done\"", html);
         Assert.Contains("id=\"task-items-search\"", html);
         Assert.Contains("id=\"task-items-clear-search\"", html);
+        Assert.Contains("id=\"task-items-sort\"", html);
+        Assert.Contains("Newest first", html);
+        Assert.Contains("Oldest first", html);
         Assert.Contains("Clear Search", html);
         Assert.Contains("id=\"task-items-clear-completed\"", html);
         Assert.Contains("Clear completed", html);
@@ -76,7 +79,6 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Contains("Filter task items", html);
-        Assert.DoesNotContain("Sort", html);
         Assert.DoesNotContain("Pagination", html);
     }
 
@@ -114,6 +116,10 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("const filterButtonEls = Array.from(document.querySelectorAll(\"[data-task-filter]\"));", script);
         Assert.Contains("const searchInputEl = document.getElementById(\"task-items-search\");", script);
         Assert.Contains("const clearSearchButtonEl = document.getElementById(\"task-items-clear-search\");", script);
+        Assert.Contains("const sortSelectEl = document.getElementById(\"task-items-sort\");", script);
+        Assert.Contains("let selectedSort = \"newest\";", script);
+        Assert.Contains("if (selectedSort === \"oldest\")", script);
+        Assert.Contains("sortSelectEl.addEventListener(\"change\"", script);
         Assert.Contains("const clearCompletedButtonEl = document.getElementById(\"task-items-clear-completed\");", script);
         Assert.Contains("window.confirm(\"Clear all completed tasks?\")", script);
         Assert.Contains("await deleteTaskItem(item.id);", script);
