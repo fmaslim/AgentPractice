@@ -5,4 +5,6 @@ public class UpdateTaskItemRequest
     public string? Title { get; set; }
 
     public bool IsDone { get; set; }
+
+    public string? Priority { get; set; }
 }

@@ -10,6 +10,11 @@ function buildPageShell() {
     document.body.innerHTML = `
         <form id="task-item-create-form"></form>
         <input id="task-item-title" />
+        <select id="task-item-priority">
+            <option value="Low">Low</option>
+            <option value="Medium" selected>Medium</option>
+            <option value="High">High</option>
+        </select>
         <button id="task-item-add-button" type="submit"></button>
         <div id="task-item-create-success" class="d-none"></div>
         <div id="task-item-create-error" class="d-none"></div>
@@ -436,13 +441,13 @@ describe("task-items inline edit behavior", () => {
 
     it("Save sends PUT to /api/TaskItems/{id} and preserves original isDone while changing title", async () => {
         const initialItems = [
-            { id: 1, title: "Original title", isDone: true },
-            { id: 2, title: "Other task", isDone: false }
+            { id: 1, title: "Original title", priority: "High", isDone: true },
+            { id: 2, title: "Other task", priority: "Low", isDone: false }
         ];
 
         const updatedItems = [
-            { id: 1, title: "Renamed title", isDone: true },
-            { id: 2, title: "Other task", isDone: false }
+            { id: 1, title: "Renamed title", priority: "High", isDone: true },
+            { id: 2, title: "Other task", priority: "Low", isDone: false }
         ];
 
         let getCount = 0;
@@ -456,7 +461,7 @@ describe("task-items inline edit behavior", () => {
             }
 
             if (url === "/api/TaskItems/1" && method === "PUT") {
-                return createJsonResponse({ id: 1, title: "Renamed title", isDone: true });
+                return createJsonResponse({ id: 1, title: "Renamed title", priority: "High", isDone: true });
             }
 
             throw new Error(`Unexpected fetch: ${method} ${url}`);
@@ -504,6 +509,7 @@ describe("task-items inline edit behavior", () => {
         const putPayload = JSON.parse(putCall[1].body);
         expect(putPayload.title).toBe("Renamed title");
         expect(putPayload.isDone).toBe(true);
+        expect(putPayload.priority).toBe("High");
     });
 
     it("empty edit title shows validation and does not send PUT", async () => {

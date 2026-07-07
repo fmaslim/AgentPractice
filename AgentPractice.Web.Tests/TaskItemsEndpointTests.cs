@@ -31,6 +31,7 @@ public class TaskItemsEndpointTests : IClassFixture<WebApplicationFactory<Progra
         Assert.Equal(3, items.Length);
         Assert.Equal(1, items[0].Id);
         Assert.Equal("Set up MVC project", items[0].Title);
+        Assert.Equal("Medium", items[0].Priority);
         Assert.True(items[0].IsDone);
     }
 
@@ -46,6 +47,7 @@ public class TaskItemsEndpointTests : IClassFixture<WebApplicationFactory<Progra
         Assert.NotNull(item);
         Assert.Equal(2, item.Id);
         Assert.Equal("Add health endpoint", item.Title);
+        Assert.Equal("Medium", item.Priority);
         Assert.True(item.IsDone);
     }
 
@@ -69,6 +71,7 @@ public class TaskItemsEndpointTests : IClassFixture<WebApplicationFactory<Progra
         Assert.NotNull(createdItem);
         Assert.True(createdItem.Id > 3);
         Assert.Equal("Write endpoint plan", createdItem.Title);
+        Assert.Equal("Medium", createdItem.Priority);
         Assert.False(createdItem.IsDone);
 
         var getResponse = await _client.GetAsync("/api/taskitems");
@@ -78,7 +81,20 @@ public class TaskItemsEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var items = await getResponse.Content.ReadFromJsonAsync<TaskItem[]>();
 
         Assert.NotNull(items);
-        Assert.Contains(items, item => item.Id == createdItem.Id && item.Title == createdItem.Title && !item.IsDone);
+        Assert.Contains(items, item => item.Id == createdItem.Id && item.Title == createdItem.Title && item.Priority == "Medium" && !item.IsDone);
+    }
+
+    [Fact]
+    public async Task PostTaskItem_WithPriority_CreatesItemWithRequestedPriority()
+    {
+        var createResponse = await _client.PostAsJsonAsync("/api/taskitems", new { title = "Plan sprint", priority = "High" });
+
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+        var createdItem = await createResponse.Content.ReadFromJsonAsync<TaskItem>();
+
+        Assert.NotNull(createdItem);
+        Assert.Equal("High", createdItem.Priority);
     }
 
     [Theory]
@@ -103,7 +119,22 @@ public class TaskItemsEndpointTests : IClassFixture<WebApplicationFactory<Progra
         Assert.NotNull(updatedItem);
         Assert.Equal(2, updatedItem.Id);
         Assert.Equal("Update endpoint docs", updatedItem.Title);
+        Assert.Equal("Medium", updatedItem.Priority);
         Assert.False(updatedItem.IsDone);
+    }
+
+    [Fact]
+    public async Task PutTaskItem_WithPriority_UpdatesPriority()
+    {
+        var response = await _client.PutAsJsonAsync("/api/taskitems/2", new { title = "Update endpoint docs", isDone = false, priority = "Low" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var updatedItem = await response.Content.ReadFromJsonAsync<TaskItem>();
+
+        Assert.NotNull(updatedItem);
+        Assert.Equal(2, updatedItem.Id);
+        Assert.Equal("Low", updatedItem.Priority);
     }
 
     [Fact]

@@ -6,4 +6,6 @@ public class CreateTaskItemRequest
 {
     [Required]
     public string Title { get; set; } = string.Empty;
+
+    public string? Priority { get; set; }
 }

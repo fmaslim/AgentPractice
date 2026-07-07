@@ -14,7 +14,8 @@
         <form id="task-item-create-form" class="card shadow-sm mb-3" novalidate>
             <div class="card-body">
                 <label for="task-item-title" class="form-label">New task title</label>
-                <div class="input-group">
+                <div class="row g-2">
+                    <div class="col-12 col-md-8">
                     <input
                         id="task-item-title"
                         name="title"
@@ -23,7 +24,18 @@
                         placeholder="Enter a task title"
                         autocomplete="off"
                         maxlength="200" />
+                    </div>
+                    <div class="col-8 col-md-2">
+                        <label for="task-item-priority" class="visually-hidden">Priority</label>
+                        <select id="task-item-priority" name="priority" class="form-select" aria-label="New task priority">
+                            <option value="Low">Low</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                    <div class="col-4 col-md-2 d-grid">
                     <button id="task-item-add-button" type="submit" class="btn btn-primary">Add</button>
+                    </div>
                 </div>
             </div>
         </form>

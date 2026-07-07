@@ -8,9 +8,9 @@ public interface ITaskItemService
 
     TaskItem? GetTaskItemById(int id);
 
-    TaskItem CreateTaskItem(string title);
+    TaskItem CreateTaskItem(string title, string? priority);
 
-    TaskItem? UpdateTaskItem(int id, string title, bool isDone);
+    TaskItem? UpdateTaskItem(int id, string title, bool isDone, string? priority);
 
     bool DeleteTaskItem(int id);
 

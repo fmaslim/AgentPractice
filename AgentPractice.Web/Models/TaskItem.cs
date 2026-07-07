@@ -6,5 +6,7 @@ public class TaskItem
 
     public string Title { get; set; } = string.Empty;
 
+    public string Priority { get; set; } = "Medium";
+
     public bool IsDone { get; set; }
 }

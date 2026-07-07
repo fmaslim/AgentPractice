@@ -39,7 +39,7 @@ public class TaskItemsController : ControllerBase
     [HttpPost]
     public ActionResult<TaskItem> Create(CreateTaskItemRequest request)
     {
-        var taskItem = _taskItemService.CreateTaskItem(request.Title);
+        var taskItem = _taskItemService.CreateTaskItem(request.Title, request.Priority);
 
         return StatusCode(StatusCodes.Status201Created, taskItem);
     }
@@ -57,7 +57,7 @@ public class TaskItemsController : ControllerBase
             return BadRequest();
         }
 
-        var updatedItem = _taskItemService.UpdateTaskItem(id, request.Title, request.IsDone);
+        var updatedItem = _taskItemService.UpdateTaskItem(id, request.Title, request.IsDone, request.Priority);
 
         if (updatedItem is null)
         {

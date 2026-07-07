@@ -1,6 +1,7 @@
 (function () {
     const createFormEl = document.getElementById("task-item-create-form");
     const titleInputEl = document.getElementById("task-item-title");
+    const createPrioritySelectEl = document.getElementById("task-item-priority");
     const addButtonEl = document.getElementById("task-item-add-button");
     const createSuccessEl = document.getElementById("task-item-create-success");
     const createErrorEl = document.getElementById("task-item-create-error");
@@ -15,7 +16,7 @@
     const sortSelectEl = document.getElementById("task-items-sort");
     const clearCompletedButtonEl = document.getElementById("task-items-clear-completed");
 
-    if (!createFormEl || !titleInputEl || !addButtonEl || !createSuccessEl || !createErrorEl || !loadingEl || !errorEl || !countEl || !emptyEl || !listEl || !searchInputEl || !clearSearchButtonEl || !sortSelectEl || !clearCompletedButtonEl) {
+    if (!createFormEl || !titleInputEl || !createPrioritySelectEl || !addButtonEl || !createSuccessEl || !createErrorEl || !loadingEl || !errorEl || !countEl || !emptyEl || !listEl || !searchInputEl || !clearSearchButtonEl || !sortSelectEl || !clearCompletedButtonEl) {
         return;
     }
 
@@ -178,6 +179,37 @@
         return badge;
     }
 
+    function normalizePriority(priority) {
+        const value = String(priority ?? "").trim().toLowerCase();
+
+        if (value === "low") {
+            return "Low";
+        }
+
+        if (value === "high") {
+            return "High";
+        }
+
+        return "Medium";
+    }
+
+    function buildPriorityBadge(priority) {
+        const normalizedPriority = normalizePriority(priority);
+        const badge = document.createElement("span");
+
+        if (normalizedPriority === "High") {
+            badge.className = "badge text-bg-danger";
+        } else if (normalizedPriority === "Low") {
+            badge.className = "badge text-bg-info";
+        } else {
+            badge.className = "badge text-bg-warning";
+        }
+
+        badge.textContent = normalizedPriority;
+
+        return badge;
+    }
+
     function buildCompleteButton() {
         const button = document.createElement("button");
         button.type = "button";
@@ -231,14 +263,14 @@
         }
     }
 
-    async function updateTaskItem(itemId, title, isDone) {
+    async function updateTaskItem(itemId, title, isDone, priority) {
         const response = await fetch(`/api/TaskItems/${itemId}`, {
             method: "PUT",
             headers: {
                 Accept: "application/json",
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ title: title, isDone: isDone })
+            body: JSON.stringify({ title: title, isDone: isDone, priority: priority })
         });
 
         if (!response.ok) {
@@ -268,8 +300,10 @@
             content.className = "me-3";
 
             const isEditingRow = editingTaskItemId === item.id;
+            const itemPriority = normalizePriority(item.priority);
 
             let editTitleInput = null;
+            let editPrioritySelect = null;
 
             if (isEditingRow) {
                 editTitleInput = document.createElement("input");
@@ -280,6 +314,25 @@
                 editTitleInput.autocomplete = "off";
                 editTitleInput.setAttribute("aria-label", "Edit title for task " + item.id);
                 content.appendChild(editTitleInput);
+
+                editPrioritySelect = document.createElement("select");
+                editPrioritySelect.className = "form-select form-select-sm mt-2";
+                editPrioritySelect.setAttribute("aria-label", "Edit priority for task " + item.id);
+
+                const priorities = ["Low", "Medium", "High"];
+                for (const priority of priorities) {
+                    const option = document.createElement("option");
+                    option.value = priority;
+                    option.textContent = priority;
+
+                    if (priority === itemPriority) {
+                        option.selected = true;
+                    }
+
+                    editPrioritySelect.appendChild(option);
+                }
+
+                content.appendChild(editPrioritySelect);
             } else {
                 const title = document.createElement("h2");
                 title.className = "h6 mb-1";
@@ -289,20 +342,22 @@
 
             const meta = document.createElement("p");
             meta.className = "mb-0 text-muted small";
-            meta.textContent = "Task #" + item.id;
+            meta.textContent = "Task #" + item.id + " • Priority: " + itemPriority;
 
             content.appendChild(meta);
 
             const actions = document.createElement("div");
             actions.className = "d-flex align-items-center gap-2";
             actions.appendChild(buildStatusBadge(Boolean(item.isDone)));
+            actions.appendChild(buildPriorityBadge(itemPriority));
 
-            if (isEditingRow && editTitleInput) {
+            if (isEditingRow && editTitleInput && editPrioritySelect) {
                 const saveButton = buildSaveButton();
                 const cancelButton = buildCancelButton();
 
                 saveButton.addEventListener("click", async function () {
                     const nextTitle = editTitleInput.value.trim();
+                    const nextPriority = normalizePriority(editPrioritySelect.value);
 
                     if (!nextTitle) {
                         errorEl.textContent = "Title is required.";
@@ -317,7 +372,7 @@
                     saveButton.textContent = "Saving...";
 
                     try {
-                        await updateTaskItem(item.id, nextTitle, Boolean(item.isDone));
+                        await updateTaskItem(item.id, nextTitle, Boolean(item.isDone), nextPriority);
                         editingTaskItemId = null;
                         await loadTaskItems();
                     } catch (error) {
@@ -496,14 +551,14 @@
         }
     }
 
-    async function createTaskItem(title) {
+    async function createTaskItem(title, priority) {
         const response = await fetch("/api/TaskItems", {
             method: "POST",
             headers: {
                 Accept: "application/json",
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ title: title })
+            body: JSON.stringify({ title: title, priority: priority })
         });
 
         if (!response.ok) {
@@ -521,6 +576,7 @@
         clearCreateFeedback();
 
         const title = titleInputEl.value.trim();
+        const priority = normalizePriority(createPrioritySelectEl.value);
 
         if (!title) {
             createErrorEl.textContent = "Title is required.";
@@ -531,10 +587,11 @@
         try {
             isSubmittingCreate = true;
             setCreateSubmitting(true);
-            await createTaskItem(title);
+            await createTaskItem(title, priority);
             await loadTaskItems();
 
             titleInputEl.value = "";
+            createPrioritySelectEl.value = "Medium";
             createSuccessEl.textContent = "Task item created.";
             setVisible(createSuccessEl, true);
         } catch (error) {

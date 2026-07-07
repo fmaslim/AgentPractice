@@ -41,6 +41,7 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
 
         Assert.Contains("id=\"task-item-create-form\"", html);
         Assert.Contains("id=\"task-item-title\"", html);
+        Assert.Contains("id=\"task-item-priority\"", html);
         Assert.Contains("id=\"task-item-add-button\"", html);
         Assert.Contains("id=\"task-item-create-success\"", html);
         Assert.Contains("id=\"task-item-create-error\"", html);
@@ -56,6 +57,9 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("Clear Search", html);
         Assert.Contains("id=\"task-items-clear-completed\"", html);
         Assert.Contains("Clear completed", html);
+        Assert.Contains(">Low<", html);
+        Assert.Contains(">Medium<", html);
+        Assert.Contains(">High<", html);
         Assert.Contains("Search by title", html);
         Assert.Contains(">All<", html);
         Assert.Contains(">Open<", html);
@@ -98,7 +102,8 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("Title is required.", script);
         Assert.Contains("fetch(\"/api/TaskItems\"", script);
         Assert.Contains("method: \"POST\"", script);
-        Assert.Contains("JSON.stringify({ title: title })", script);
+        Assert.Contains("const createPrioritySelectEl = document.getElementById(\"task-item-priority\");", script);
+        Assert.Contains("JSON.stringify({ title: title, priority: priority })", script);
         Assert.Contains("isSubmittingCreate = true;", script);
         Assert.Contains("isSubmittingCreate = false;", script);
         Assert.Contains("addButtonEl.disabled = isSubmitting", script);
@@ -141,8 +146,9 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("button.textContent = \"Delete\"", script);
         Assert.Contains("fetch(`/api/TaskItems/${itemId}`", script);
         Assert.Contains("method: \"PUT\"", script);
-        Assert.Contains("JSON.stringify({ title: title, isDone: isDone })", script);
-        Assert.Contains("await updateTaskItem(item.id, nextTitle, Boolean(item.isDone));", script);
+        Assert.Contains("JSON.stringify({ title: title, isDone: isDone, priority: priority })", script);
+        Assert.Contains("const nextPriority = normalizePriority(editPrioritySelect.value);", script);
+        Assert.Contains("await updateTaskItem(item.id, nextTitle, Boolean(item.isDone), nextPriority);", script);
         Assert.Contains("const shouldDelete = window.confirm(\"Delete this task item?\");", script);
         Assert.Contains("if (!shouldDelete)", script);
         Assert.Contains("method: \"DELETE\"", script);
