@@ -57,6 +57,7 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains(">Done<", html);
         Assert.Contains("id=\"task-items-loading\"", html);
         Assert.Contains("Loading task items", html);
+        Assert.Contains("id=\"task-items-count\"", html);
         Assert.Contains("id=\"task-items-empty\"", html);
         Assert.Contains("No task items found.", html);
         Assert.Contains("id=\"task-items-error\"", html);
@@ -102,6 +103,9 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("createSuccessEl.textContent = \"Task item created.\";", script);
         Assert.Contains("fetch(\"/api/TaskItems\"", script);
         Assert.Contains("method: \"GET\"", script);
+        Assert.Contains("const countEl = document.getElementById(\"task-items-count\");", script);
+        Assert.Contains("const label = count === 1 ? \"task\" : \"tasks\";", script);
+        Assert.Contains("countEl.textContent = `Showing ${count} ${label}`;", script);
         Assert.Contains("let selectedFilter = \"all\";", script);
         Assert.Contains("let searchTerm = \"\";", script);
         Assert.Contains("let taskItems = [];", script);

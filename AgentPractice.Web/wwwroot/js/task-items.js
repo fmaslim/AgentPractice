@@ -6,13 +6,14 @@
     const createErrorEl = document.getElementById("task-item-create-error");
     const loadingEl = document.getElementById("task-items-loading");
     const errorEl = document.getElementById("task-items-error");
+    const countEl = document.getElementById("task-items-count");
     const emptyEl = document.getElementById("task-items-empty");
     const listEl = document.getElementById("task-items-list");
     const filterButtonEls = Array.from(document.querySelectorAll("[data-task-filter]"));
     const searchInputEl = document.getElementById("task-items-search");
     const clearSearchButtonEl = document.getElementById("task-items-clear-search");
 
-    if (!createFormEl || !titleInputEl || !addButtonEl || !createSuccessEl || !createErrorEl || !loadingEl || !errorEl || !emptyEl || !listEl || !searchInputEl || !clearSearchButtonEl) {
+    if (!createFormEl || !titleInputEl || !addButtonEl || !createSuccessEl || !createErrorEl || !loadingEl || !errorEl || !countEl || !emptyEl || !listEl || !searchInputEl || !clearSearchButtonEl) {
         return;
     }
 
@@ -29,9 +30,11 @@
     function clearStates() {
         setVisible(loadingEl, false);
         setVisible(errorEl, false);
+        setVisible(countEl, false);
         setVisible(emptyEl, false);
         setVisible(listEl, false);
         errorEl.textContent = "";
+        countEl.textContent = "";
         listEl.innerHTML = "";
     }
 
@@ -39,6 +42,12 @@
         setVisible(emptyEl, false);
         setVisible(listEl, false);
         listEl.innerHTML = "";
+    }
+
+    function setTaskCount(count) {
+        const label = count === 1 ? "task" : "tasks";
+        countEl.textContent = `Showing ${count} ${label}`;
+        setVisible(countEl, true);
     }
 
     function clearCreateFeedback() {
@@ -382,12 +391,13 @@
         setFilterButtonState();
         setSearchButtonState();
 
+        const visibleItems = Array.isArray(taskItems) ? getVisibleItems(taskItems) : [];
+        setTaskCount(visibleItems.length);
+
         if (!Array.isArray(taskItems) || taskItems.length === 0) {
             setVisible(emptyEl, true);
             return;
         }
-
-        const visibleItems = getVisibleItems(taskItems);
 
         if (visibleItems.length === 0) {
             setVisible(emptyEl, true);

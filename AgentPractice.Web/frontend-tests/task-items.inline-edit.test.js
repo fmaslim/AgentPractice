@@ -22,6 +22,7 @@ function buildPageShell() {
         <button id="task-items-clear-search" type="button" class="d-none">Clear Search</button>
         <div id="task-items-loading"></div>
         <div id="task-items-error" class="d-none"></div>
+        <div id="task-items-count" class="d-none"></div>
         <div id="task-items-empty" class="d-none"></div>
         <div id="task-items-list" class="d-none"></div>
     `;
@@ -223,6 +224,56 @@ describe("task-items inline edit behavior", () => {
         );
 
         expect(getCalls.length).toBe(1);
+    });
+
+    it("updates task count for all, filtered, searched, and empty results", async () => {
+        const items = [
+            { id: 1, title: "Open alpha", isDone: false },
+            { id: 2, title: "Done beta", isDone: true },
+            { id: 3, title: "Open gamma", isDone: false }
+        ];
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            if (url === "/api/TaskItems" && (!options.method || options.method === "GET")) {
+                return createJsonResponse(items);
+            }
+
+            throw new Error(`Unexpected fetch: ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const count = document.getElementById("task-items-count");
+        const doneButton = document.getElementById("task-items-filter-done");
+        const openButton = document.getElementById("task-items-filter-open");
+        const searchInput = document.getElementById("task-items-search");
+
+        await vi.waitFor(() => {
+            expect(count.textContent).toBe("Showing 3 tasks");
+            expect(count.classList.contains("d-none")).toBe(false);
+        });
+
+        doneButton.click();
+
+        await vi.waitFor(() => {
+            expect(count.textContent).toBe("Showing 1 task");
+        });
+
+        openButton.click();
+
+        await vi.waitFor(() => {
+            expect(count.textContent).toBe("Showing 2 tasks");
+        });
+
+        searchInput.value = "zzz";
+        searchInput.dispatchEvent(new Event("input"));
+
+        await vi.waitFor(() => {
+            expect(count.textContent).toBe("Showing 0 tasks");
+        });
     });
 
     it("only the clicked row enters edit mode", async () => {
