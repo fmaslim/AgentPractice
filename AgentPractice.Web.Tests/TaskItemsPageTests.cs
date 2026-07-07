@@ -44,6 +44,13 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("id=\"task-item-add-button\"", html);
         Assert.Contains("id=\"task-item-create-success\"", html);
         Assert.Contains("id=\"task-item-create-error\"", html);
+        Assert.Contains("id=\"task-items-filter\"", html);
+        Assert.Contains("id=\"task-items-filter-all\"", html);
+        Assert.Contains("id=\"task-items-filter-open\"", html);
+        Assert.Contains("id=\"task-items-filter-done\"", html);
+        Assert.Contains(">All<", html);
+        Assert.Contains(">Open<", html);
+        Assert.Contains(">Done<", html);
         Assert.Contains("id=\"task-items-loading\"", html);
         Assert.Contains("Loading task items", html);
         Assert.Contains("id=\"task-items-empty\"", html);
@@ -53,7 +60,7 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task GetTaskItemsPage_DoesNotContainUnplannedListControls()
+    public async Task GetTaskItemsPage_ContainsOnlyPlannedListControls()
     {
         var response = await _client.GetAsync("/Home/TaskItems");
 
@@ -61,7 +68,7 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
 
         var html = await response.Content.ReadAsStringAsync();
 
-        Assert.DoesNotContain("Filter", html);
+        Assert.Contains("Filter task items", html);
         Assert.DoesNotContain("Sort", html);
         Assert.DoesNotContain("Pagination", html);
     }
@@ -91,6 +98,13 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("createSuccessEl.textContent = \"Task item created.\";", script);
         Assert.Contains("fetch(\"/api/TaskItems\"", script);
         Assert.Contains("method: \"GET\"", script);
+        Assert.Contains("let selectedFilter = \"all\";", script);
+        Assert.Contains("let taskItems = [];", script);
+        Assert.Contains("const filterButtonEls = Array.from(document.querySelectorAll(\"[data-task-filter]\"));", script);
+        Assert.Contains("return items.filter(item => !item.isDone);", script);
+        Assert.Contains("return items.filter(item => Boolean(item.isDone));", script);
+        Assert.Contains("selectedFilter = nextFilter;", script);
+        Assert.Contains("renderTaskItems();", script);
         Assert.Contains("buildStatusBadge(Boolean(item.isDone))", script);
         Assert.Contains("isDone ? \"Done\" : \"Open\"", script);
         Assert.Contains("isDone ? \"badge text-bg-success\" : \"badge text-bg-secondary\"", script);

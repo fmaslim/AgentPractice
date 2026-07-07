@@ -8,6 +8,7 @@
     const errorEl = document.getElementById("task-items-error");
     const emptyEl = document.getElementById("task-items-empty");
     const listEl = document.getElementById("task-items-list");
+    const filterButtonEls = Array.from(document.querySelectorAll("[data-task-filter]"));
 
     if (!createFormEl || !titleInputEl || !addButtonEl || !createSuccessEl || !createErrorEl || !loadingEl || !errorEl || !emptyEl || !listEl) {
         return;
@@ -15,6 +16,8 @@
 
     let isSubmittingCreate = false;
     let editingTaskItemId = null;
+    let selectedFilter = "all";
+    let taskItems = [];
 
     function setVisible(element, visible) {
         element.classList.toggle("d-none", !visible);
@@ -29,6 +32,12 @@
         listEl.innerHTML = "";
     }
 
+    function clearListState() {
+        setVisible(emptyEl, false);
+        setVisible(listEl, false);
+        listEl.innerHTML = "";
+    }
+
     function clearCreateFeedback() {
         createSuccessEl.textContent = "";
         createErrorEl.textContent = "";
@@ -39,6 +48,26 @@
     function setCreateSubmitting(isSubmitting) {
         addButtonEl.disabled = isSubmitting;
         addButtonEl.textContent = isSubmitting ? "Adding..." : "Add";
+    }
+
+    function setFilterButtonState() {
+        for (const button of filterButtonEls) {
+            const isActive = button.dataset.taskFilter === selectedFilter;
+            button.classList.toggle("active", isActive);
+            button.setAttribute("aria-pressed", String(isActive));
+        }
+    }
+
+    function getVisibleItems(items) {
+        if (selectedFilter === "open") {
+            return items.filter(item => !item.isDone);
+        }
+
+        if (selectedFilter === "done") {
+            return items.filter(item => Boolean(item.isDone));
+        }
+
+        return items;
     }
 
     function buildStatusBadge(isDone) {
@@ -312,6 +341,26 @@
         }
     }
 
+    function renderTaskItems() {
+        clearListState();
+        setFilterButtonState();
+
+        if (!Array.isArray(taskItems) || taskItems.length === 0) {
+            setVisible(emptyEl, true);
+            return;
+        }
+
+        const visibleItems = getVisibleItems(taskItems);
+
+        if (visibleItems.length === 0) {
+            setVisible(emptyEl, true);
+            return;
+        }
+
+        renderList(visibleItems);
+        setVisible(listEl, true);
+    }
+
     async function loadTaskItems() {
         try {
             clearStates();
@@ -329,16 +378,10 @@
             }
 
             const items = await response.json();
+            taskItems = Array.isArray(items) ? items : [];
 
             clearStates();
-
-            if (!Array.isArray(items) || items.length === 0) {
-                setVisible(emptyEl, true);
-                return;
-            }
-
-            renderList(items);
-            setVisible(listEl, true);
+            renderTaskItems();
         } catch (error) {
             clearStates();
             errorEl.textContent = "Unable to load task items. " + (error instanceof Error ? error.message : "Please try again.");
@@ -395,6 +438,21 @@
             setCreateSubmitting(false);
         }
     });
+
+    for (const button of filterButtonEls) {
+        button.addEventListener("click", function () {
+            const nextFilter = button.dataset.taskFilter;
+
+            if (!nextFilter || nextFilter === selectedFilter) {
+                return;
+            }
+
+            selectedFilter = nextFilter;
+            renderTaskItems();
+        });
+    }
+
+    setFilterButtonState();
 
     loadTaskItems();
 })();

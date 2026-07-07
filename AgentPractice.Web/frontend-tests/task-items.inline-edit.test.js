@@ -13,6 +13,11 @@ function buildPageShell() {
         <button id="task-item-add-button" type="submit"></button>
         <div id="task-item-create-success" class="d-none"></div>
         <div id="task-item-create-error" class="d-none"></div>
+        <div id="task-items-filter" role="group" aria-label="Filter task items">
+            <button id="task-items-filter-all" type="button" data-task-filter="all" aria-pressed="true"></button>
+            <button id="task-items-filter-open" type="button" data-task-filter="open" aria-pressed="false"></button>
+            <button id="task-items-filter-done" type="button" data-task-filter="done" aria-pressed="false"></button>
+        </div>
         <div id="task-items-loading"></div>
         <div id="task-items-error" class="d-none"></div>
         <div id="task-items-empty" class="d-none"></div>
@@ -39,6 +44,69 @@ describe("task-items inline edit behavior", () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         buildPageShell();
+    });
+
+    it("filters all, open, and done items without refetching", async () => {
+        const items = [
+            { id: 1, title: "Open task", isDone: false },
+            { id: 2, title: "Done task", isDone: true },
+            { id: 3, title: "Second open task", isDone: false }
+        ];
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            if (url === "/api/TaskItems" && (!options.method || options.method === "GET")) {
+                return createJsonResponse(items);
+            }
+
+            throw new Error(`Unexpected fetch: ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const allButton = document.getElementById("task-items-filter-all");
+        const openButton = document.getElementById("task-items-filter-open");
+        const doneButton = document.getElementById("task-items-filter-done");
+
+        expect(allButton.getAttribute("aria-pressed")).toBe("true");
+        expect(document.getElementById("task-items-list").textContent).toContain("Open task");
+        expect(document.getElementById("task-items-list").textContent).toContain("Done task");
+
+        openButton.click();
+
+        await vi.waitFor(() => {
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            expect(rows.length).toBe(2);
+            expect(document.getElementById("task-items-list").textContent).toContain("Open task");
+            expect(document.getElementById("task-items-list").textContent).not.toContain("Done task");
+            expect(openButton.getAttribute("aria-pressed")).toBe("true");
+        });
+
+        doneButton.click();
+
+        await vi.waitFor(() => {
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            expect(rows.length).toBe(1);
+            expect(document.getElementById("task-items-list").textContent).toContain("Done task");
+            expect(document.getElementById("task-items-list").textContent).not.toContain("Second open task");
+            expect(doneButton.getAttribute("aria-pressed")).toBe("true");
+        });
+
+        allButton.click();
+
+        await vi.waitFor(() => {
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            expect(rows.length).toBe(3);
+            expect(allButton.getAttribute("aria-pressed")).toBe("true");
+        });
+
+        const getCalls = global.fetch.mock.calls.filter(([url, options]) =>
+            url === "/api/TaskItems" && (!options?.method || options.method === "GET")
+        );
+
+        expect(getCalls.length).toBe(1);
     });
 
     it("only the clicked row enters edit mode", async () => {
@@ -449,5 +517,254 @@ describe("task-items delete behavior", () => {
 
         expect(editingRowButtons).not.toContain("Delete");
         expect(nonEditingRowButtons).toContain("Delete");
+    });
+});
+
+describe("task-items filter persistence", () => {
+    beforeEach(() => {
+        vi.restoreAllMocks();
+        buildPageShell();
+    });
+
+    it("Open filter remains active after create reloads the list", async () => {
+        const initialItems = [
+            { id: 1, title: "Open task", isDone: false },
+            { id: 2, title: "Done task", isDone: true }
+        ];
+        const afterCreateItems = [
+            { id: 1, title: "Open task", isDone: false },
+            { id: 2, title: "Done task", isDone: true },
+            { id: 3, title: "New open task", isDone: false }
+        ];
+
+        let getCount = 0;
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            const method = options.method ?? "GET";
+
+            if (url === "/api/TaskItems" && method === "GET") {
+                getCount += 1;
+                return createJsonResponse(getCount >= 2 ? afterCreateItems : initialItems);
+            }
+
+            if (url === "/api/TaskItems" && method === "POST") {
+                return createJsonResponse({ id: 3, title: "New open task", isDone: false });
+            }
+
+            throw new Error(`Unexpected fetch: ${method} ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const openButton = document.getElementById("task-items-filter-open");
+        openButton.click();
+
+        await vi.waitFor(() => {
+            const listText = document.getElementById("task-items-list").textContent;
+            expect(openButton.getAttribute("aria-pressed")).toBe("true");
+            expect(listText).toContain("Open task");
+            expect(listText).not.toContain("Done task");
+        });
+
+        const titleInput = document.getElementById("task-item-title");
+        titleInput.value = "New open task";
+        const createForm = document.getElementById("task-item-create-form");
+        createForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+
+        await vi.waitFor(() => {
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            const listText = document.getElementById("task-items-list").textContent;
+            expect(rows.length).toBe(2);
+            expect(openButton.getAttribute("aria-pressed")).toBe("true");
+            expect(listText).toContain("Open task");
+            expect(listText).toContain("New open task");
+            expect(listText).not.toContain("Done task");
+        });
+    });
+
+    it("Done filter remains active after edit reloads the list", async () => {
+        const initialItems = [
+            { id: 1, title: "Open task", isDone: false },
+            { id: 2, title: "Done task", isDone: true }
+        ];
+        const afterSaveItems = [
+            { id: 1, title: "Open task", isDone: false },
+            { id: 2, title: "Done task renamed", isDone: true }
+        ];
+
+        let getCount = 0;
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            const method = options.method ?? "GET";
+
+            if (url === "/api/TaskItems" && method === "GET") {
+                getCount += 1;
+                return createJsonResponse(getCount >= 3 ? afterSaveItems : initialItems);
+            }
+
+            if (url === "/api/TaskItems/2" && method === "PUT") {
+                return createJsonResponse({ id: 2, title: "Done task renamed", isDone: true });
+            }
+
+            throw new Error(`Unexpected fetch: ${method} ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const doneButton = document.getElementById("task-items-filter-done");
+        doneButton.click();
+
+        await vi.waitFor(() => {
+            const listText = document.getElementById("task-items-list").textContent;
+            expect(doneButton.getAttribute("aria-pressed")).toBe("true");
+            expect(listText).toContain("Done task");
+            expect(listText).not.toContain("Open task");
+        });
+
+        const editButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Edit");
+        expect(editButton).toBeTruthy();
+        editButton.click();
+
+        let editInput;
+        await vi.waitFor(() => {
+            editInput = document.querySelector("input[aria-label='Edit title for task 2']");
+            expect(editInput).toBeTruthy();
+        });
+
+        editInput.value = "Done task renamed";
+
+        const saveButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Save");
+        expect(saveButton).toBeTruthy();
+        saveButton.click();
+
+        await vi.waitFor(() => {
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            const listText = document.getElementById("task-items-list").textContent;
+            expect(rows.length).toBe(1);
+            expect(doneButton.getAttribute("aria-pressed")).toBe("true");
+            expect(listText).toContain("Done task renamed");
+            expect(listText).not.toContain("Open task");
+        });
+    });
+
+    it("Done filter remains active after delete reloads the list", async () => {
+        const initialItems = [
+            { id: 1, title: "Open task", isDone: false },
+            { id: 2, title: "Done task", isDone: true },
+            { id: 3, title: "Second done task", isDone: true }
+        ];
+        const afterDeleteItems = [
+            { id: 1, title: "Open task", isDone: false },
+            { id: 3, title: "Second done task", isDone: true }
+        ];
+
+        let getCount = 0;
+
+        vi.spyOn(window, "confirm").mockReturnValue(true);
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            const method = options.method ?? "GET";
+
+            if (url === "/api/TaskItems" && method === "GET") {
+                getCount += 1;
+                return createJsonResponse(getCount >= 2 ? afterDeleteItems : initialItems);
+            }
+
+            if (url === "/api/TaskItems/2" && method === "DELETE") {
+                return {
+                    ok: true,
+                    status: 204,
+                    json: async () => null
+                };
+            }
+
+            throw new Error(`Unexpected fetch: ${method} ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const doneButton = document.getElementById("task-items-filter-done");
+        doneButton.click();
+
+        await vi.waitFor(() => {
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            const listText = document.getElementById("task-items-list").textContent;
+            expect(rows.length).toBe(2);
+            expect(doneButton.getAttribute("aria-pressed")).toBe("true");
+            expect(listText).toContain("Done task");
+            expect(listText).toContain("Second done task");
+            expect(listText).not.toContain("Open task");
+        });
+
+        const deleteButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Delete");
+        expect(deleteButton).toBeTruthy();
+        deleteButton.click();
+
+        await vi.waitFor(() => {
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            const listText = document.getElementById("task-items-list").textContent;
+            expect(rows.length).toBe(1);
+            expect(doneButton.getAttribute("aria-pressed")).toBe("true");
+            expect(listText).toContain("Second done task");
+            expect(listText).not.toContain("Open task");
+            expect(listText).not.toContain("Done task");
+        });
+    });
+
+    it("Open filter hides an item after complete reloads the list", async () => {
+        const initialItems = [{ id: 1, title: "Open task", isDone: false }];
+        const afterCompleteItems = [{ id: 1, title: "Open task", isDone: true }];
+
+        let getCount = 0;
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            const method = options.method ?? "GET";
+
+            if (url === "/api/TaskItems" && method === "GET") {
+                getCount += 1;
+                return createJsonResponse(getCount >= 2 ? afterCompleteItems : initialItems);
+            }
+
+            if (url === "/api/TaskItems/1/complete" && method === "PATCH") {
+                return createJsonResponse({ id: 1, title: "Open task", isDone: true });
+            }
+
+            throw new Error(`Unexpected fetch: ${method} ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const openButton = document.getElementById("task-items-filter-open");
+        openButton.click();
+
+        await vi.waitFor(() => {
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            expect(rows.length).toBe(1);
+            expect(openButton.getAttribute("aria-pressed")).toBe("true");
+        });
+
+        const completeButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Mark Complete");
+        expect(completeButton).toBeTruthy();
+        completeButton.click();
+
+        await vi.waitFor(() => {
+            const empty = document.getElementById("task-items-empty");
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            expect(openButton.getAttribute("aria-pressed")).toBe("true");
+            expect(empty.classList.contains("d-none")).toBe(false);
+            expect(rows.length).toBe(0);
+        });
     });
 });

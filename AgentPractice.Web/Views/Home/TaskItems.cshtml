@@ -31,6 +31,13 @@
         <div id="task-item-create-success" class="alert alert-success d-none" role="status" aria-live="polite"></div>
         <div id="task-item-create-error" class="alert alert-danger d-none" role="alert"></div>
 
+        <div id="task-items-filter" class="d-flex align-items-center gap-2 mb-3" role="group" aria-label="Filter task items">
+            <span class="text-muted small">Show:</span>
+            <button id="task-items-filter-all" type="button" class="btn btn-sm btn-outline-secondary active" data-task-filter="all" aria-pressed="true">All</button>
+            <button id="task-items-filter-open" type="button" class="btn btn-sm btn-outline-secondary" data-task-filter="open" aria-pressed="false">Open</button>
+            <button id="task-items-filter-done" type="button" class="btn btn-sm btn-outline-secondary" data-task-filter="done" aria-pressed="false">Done</button>
+        </div>
+
         <div id="task-items-loading" class="alert alert-secondary" role="status" aria-live="polite">
             Loading task items...
         </div>
