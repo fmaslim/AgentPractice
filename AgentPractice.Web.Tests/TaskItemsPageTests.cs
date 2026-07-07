@@ -51,6 +51,8 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("id=\"task-items-search\"", html);
         Assert.Contains("id=\"task-items-clear-search\"", html);
         Assert.Contains("Clear Search", html);
+        Assert.Contains("id=\"task-items-clear-completed\"", html);
+        Assert.Contains("Clear completed", html);
         Assert.Contains("Search by title", html);
         Assert.Contains(">All<", html);
         Assert.Contains(">Open<", html);
@@ -112,6 +114,10 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("const filterButtonEls = Array.from(document.querySelectorAll(\"[data-task-filter]\"));", script);
         Assert.Contains("const searchInputEl = document.getElementById(\"task-items-search\");", script);
         Assert.Contains("const clearSearchButtonEl = document.getElementById(\"task-items-clear-search\");", script);
+        Assert.Contains("const clearCompletedButtonEl = document.getElementById(\"task-items-clear-completed\");", script);
+        Assert.Contains("window.confirm(\"Clear all completed tasks?\")", script);
+        Assert.Contains("await deleteTaskItem(item.id);", script);
+        Assert.Contains("clearCompletedButtonEl.addEventListener(\"click\", clearCompletedTaskItems);", script);
         Assert.Contains("setVisible(clearSearchButtonEl, hasSearchText);", script);
         Assert.Contains("clearSearchButtonEl.addEventListener(\"click\", clearSearch);", script);
         Assert.Contains("const statusFilteredItems = items.filter(item =>", script);

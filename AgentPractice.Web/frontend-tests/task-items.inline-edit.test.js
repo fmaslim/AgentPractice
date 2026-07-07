@@ -20,6 +20,7 @@ function buildPageShell() {
         </div>
         <input id="task-items-search" type="search" />
         <button id="task-items-clear-search" type="button" class="d-none">Clear Search</button>
+        <button id="task-items-clear-completed" type="button" disabled>Clear completed</button>
         <div id="task-items-loading"></div>
         <div id="task-items-error" class="d-none"></div>
         <div id="task-items-count" class="d-none"></div>
@@ -684,6 +685,93 @@ describe("task-items delete behavior", () => {
 
         expect(editingRowButtons).not.toContain("Delete");
         expect(nonEditingRowButtons).toContain("Delete");
+    });
+
+    it("Clear completed is disabled when there are no done tasks", async () => {
+        const items = [
+            { id: 1, title: "First task", isDone: false },
+            { id: 2, title: "Second task", isDone: false }
+        ];
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            if (url === "/api/TaskItems" && (!options.method || options.method === "GET")) {
+                return createJsonResponse(items);
+            }
+
+            throw new Error(`Unexpected fetch: ${options.method ?? "GET"} ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const clearCompletedButton = document.getElementById("task-items-clear-completed");
+        expect(clearCompletedButton.disabled).toBe(true);
+    });
+
+    it("Clear completed confirms and deletes only completed tasks", async () => {
+        const initialItems = [
+            { id: 1, title: "Open task", isDone: false },
+            { id: 2, title: "Done one", isDone: true },
+            { id: 3, title: "Done two", isDone: true }
+        ];
+        const afterClearItems = [
+            { id: 1, title: "Open task", isDone: false }
+        ];
+
+        let getCount = 0;
+
+        const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            const method = options.method ?? "GET";
+
+            if (url === "/api/TaskItems" && method === "GET") {
+                getCount += 1;
+                return createJsonResponse(getCount >= 2 ? afterClearItems : initialItems);
+            }
+
+            if ((url === "/api/TaskItems/2" || url === "/api/TaskItems/3") && method === "DELETE") {
+                return {
+                    ok: true,
+                    status: 204,
+                    json: async () => null
+                };
+            }
+
+            throw new Error(`Unexpected fetch: ${method} ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const clearCompletedButton = document.getElementById("task-items-clear-completed");
+        expect(clearCompletedButton.disabled).toBe(false);
+        clearCompletedButton.click();
+
+        await vi.waitFor(() => {
+            const rows = document.querySelectorAll("#task-items-list .list-group-item");
+            expect(rows.length).toBe(1);
+            expect(document.getElementById("task-items-list").textContent).toContain("Open task");
+            expect(document.getElementById("task-items-list").textContent).not.toContain("Done one");
+            expect(document.getElementById("task-items-list").textContent).not.toContain("Done two");
+        });
+
+        expect(confirmSpy).toHaveBeenCalledOnce();
+
+        const deleteCalls = global.fetch.mock.calls.filter(([url, options]) =>
+            (url === "/api/TaskItems/2" || url === "/api/TaskItems/3") && options?.method === "DELETE"
+        );
+
+        const openTaskDeleteCalls = global.fetch.mock.calls.filter(([url, options]) =>
+            url === "/api/TaskItems/1" && options?.method === "DELETE"
+        );
+
+        expect(deleteCalls.length).toBe(2);
+        expect(openTaskDeleteCalls.length).toBe(0);
     });
 });
 

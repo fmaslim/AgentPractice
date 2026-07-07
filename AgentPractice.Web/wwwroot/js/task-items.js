@@ -12,8 +12,9 @@
     const filterButtonEls = Array.from(document.querySelectorAll("[data-task-filter]"));
     const searchInputEl = document.getElementById("task-items-search");
     const clearSearchButtonEl = document.getElementById("task-items-clear-search");
+    const clearCompletedButtonEl = document.getElementById("task-items-clear-completed");
 
-    if (!createFormEl || !titleInputEl || !addButtonEl || !createSuccessEl || !createErrorEl || !loadingEl || !errorEl || !countEl || !emptyEl || !listEl || !searchInputEl || !clearSearchButtonEl) {
+    if (!createFormEl || !titleInputEl || !addButtonEl || !createSuccessEl || !createErrorEl || !loadingEl || !errorEl || !countEl || !emptyEl || !listEl || !searchInputEl || !clearSearchButtonEl || !clearCompletedButtonEl) {
         return;
     }
 
@@ -75,6 +76,11 @@
         setVisible(clearSearchButtonEl, hasSearchText);
     }
 
+    function setClearCompletedButtonState(items) {
+        const hasCompletedItems = items.some(item => Boolean(item.isDone));
+        clearCompletedButtonEl.disabled = !hasCompletedItems;
+    }
+
     function getVisibleItems(items) {
         const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
@@ -113,6 +119,37 @@
         searchTerm = "";
         renderTaskItems();
         searchInputEl.focus();
+    }
+
+    async function clearCompletedTaskItems() {
+        const completedItems = taskItems.filter(item => Boolean(item.isDone));
+
+        if (completedItems.length === 0) {
+            return;
+        }
+
+        const shouldClear = window.confirm("Clear all completed tasks?");
+
+        if (!shouldClear) {
+            return;
+        }
+
+        clearCompletedButtonEl.disabled = true;
+        clearCompletedButtonEl.textContent = "Clearing...";
+
+        try {
+            for (const item of completedItems) {
+                await deleteTaskItem(item.id);
+            }
+
+            await loadTaskItems();
+        } catch (error) {
+            errorEl.textContent = "Unable to clear completed task items.";
+            setVisible(errorEl, true);
+            setClearCompletedButtonState(taskItems);
+        } finally {
+            clearCompletedButtonEl.textContent = "Clear completed";
+        }
     }
 
     function buildStatusBadge(isDone) {
@@ -390,6 +427,7 @@
         clearListState();
         setFilterButtonState();
         setSearchButtonState();
+        setClearCompletedButtonState(Array.isArray(taskItems) ? taskItems : []);
 
         const visibleItems = Array.isArray(taskItems) ? getVisibleItems(taskItems) : [];
         setTaskCount(visibleItems.length);
@@ -501,6 +539,7 @@
 
     searchInputEl.addEventListener("input", handleSearchInput);
     clearSearchButtonEl.addEventListener("click", clearSearch);
+    clearCompletedButtonEl.addEventListener("click", clearCompletedTaskItems);
 
     setFilterButtonState();
 
