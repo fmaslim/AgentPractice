@@ -26,6 +26,9 @@
     let searchTerm = "";
     let taskItems = [];
 
+    const emptyStateNoTasksMessage = "No tasks yet. Add your first task to get started.";
+    const emptyStateNoResultsMessage = "No tasks found.";
+
     function setVisible(element, visible) {
         element.classList.toggle("d-none", !visible);
     }
@@ -44,6 +47,7 @@
     function clearListState() {
         setVisible(emptyEl, false);
         setVisible(listEl, false);
+        emptyEl.textContent = "";
         listEl.innerHTML = "";
     }
 
@@ -449,11 +453,13 @@
         setTaskCount(visibleItems.length);
 
         if (!Array.isArray(taskItems) || taskItems.length === 0) {
+            emptyEl.textContent = emptyStateNoTasksMessage;
             setVisible(emptyEl, true);
             return;
         }
 
         if (visibleItems.length === 0) {
+            emptyEl.textContent = emptyStateNoResultsMessage;
             setVisible(emptyEl, true);
             return;
         }

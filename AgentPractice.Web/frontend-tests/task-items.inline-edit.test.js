@@ -281,6 +281,61 @@ describe("task-items inline edit behavior", () => {
         });
     });
 
+    it("shows a friendly empty-state message when there are no tasks", async () => {
+        global.fetch = vi.fn(async (url, options = {}) => {
+            if (url === "/api/TaskItems" && (!options.method || options.method === "GET")) {
+                return createJsonResponse([]);
+            }
+
+            throw new Error(`Unexpected fetch: ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await vi.waitFor(() => {
+            const empty = document.getElementById("task-items-empty");
+            const list = document.getElementById("task-items-list");
+
+            expect(empty.classList.contains("d-none")).toBe(false);
+            expect(empty.textContent).toBe("No tasks yet. Add your first task to get started.");
+            expect(list.classList.contains("d-none")).toBe(true);
+        });
+    });
+
+    it("shows 'No tasks found.' when search/filter hides all visible tasks", async () => {
+        const items = [
+            { id: 1, title: "Open alpha", isDone: false },
+            { id: 2, title: "Done beta", isDone: true }
+        ];
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            if (url === "/api/TaskItems" && (!options.method || options.method === "GET")) {
+                return createJsonResponse(items);
+            }
+
+            throw new Error(`Unexpected fetch: ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const searchInput = document.getElementById("task-items-search");
+        searchInput.value = "missing";
+        searchInput.dispatchEvent(new Event("input"));
+
+        await vi.waitFor(() => {
+            const empty = document.getElementById("task-items-empty");
+            const list = document.getElementById("task-items-list");
+
+            expect(empty.classList.contains("d-none")).toBe(false);
+            expect(empty.textContent).toBe("No tasks found.");
+            expect(list.classList.contains("d-none")).toBe(true);
+        });
+    });
+
     it("sorts by newest first by default and composes with filter and search", async () => {
         const items = [
             { id: 1, title: "Old open", isDone: false },
