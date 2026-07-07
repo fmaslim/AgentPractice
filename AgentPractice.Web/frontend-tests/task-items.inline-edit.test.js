@@ -15,6 +15,7 @@ function buildPageShell() {
             <option value="Medium" selected>Medium</option>
             <option value="High">High</option>
         </select>
+        <input id="task-item-due-date" type="date" />
         <button id="task-item-add-button" type="submit"></button>
         <div id="task-item-create-success" class="d-none"></div>
         <div id="task-item-create-error" class="d-none"></div>
@@ -441,12 +442,12 @@ describe("task-items inline edit behavior", () => {
 
     it("Save sends PUT to /api/TaskItems/{id} and preserves original isDone while changing title", async () => {
         const initialItems = [
-            { id: 1, title: "Original title", priority: "High", isDone: true },
+            { id: 1, title: "Original title", priority: "High", dueDate: "2026-09-15", isDone: true },
             { id: 2, title: "Other task", priority: "Low", isDone: false }
         ];
 
         const updatedItems = [
-            { id: 1, title: "Renamed title", priority: "High", isDone: true },
+            { id: 1, title: "Renamed title", priority: "High", dueDate: "2026-09-15", isDone: true },
             { id: 2, title: "Other task", priority: "Low", isDone: false }
         ];
 
@@ -457,11 +458,11 @@ describe("task-items inline edit behavior", () => {
 
             if (url === "/api/TaskItems" && method === "GET") {
                 getCount += 1;
-                return createJsonResponse(getCount >= 2 ? updatedItems : initialItems);
+                return createJsonResponse(getCount >= 3 ? updatedItems : initialItems);
             }
 
             if (url === "/api/TaskItems/1" && method === "PUT") {
-                return createJsonResponse({ id: 1, title: "Renamed title", priority: "High", isDone: true });
+                return createJsonResponse({ id: 1, title: "Renamed title", priority: "High", dueDate: "2026-09-15", isDone: true });
             }
 
             throw new Error(`Unexpected fetch: ${method} ${url}`);
@@ -510,6 +511,64 @@ describe("task-items inline edit behavior", () => {
         expect(putPayload.title).toBe("Renamed title");
         expect(putPayload.isDone).toBe(true);
         expect(putPayload.priority).toBe("High");
+        expect(putPayload.dueDate).toBe("2026-09-15");
+    });
+
+    it("Save can clear an existing due date", async () => {
+        const initialItems = [
+            { id: 1, title: "Task with due date", priority: "Medium", dueDate: "2026-10-01", isDone: false }
+        ];
+
+        const updatedItems = [
+            { id: 1, title: "Task with due date", priority: "Medium", dueDate: null, isDone: false }
+        ];
+
+        let getCount = 0;
+
+        global.fetch = vi.fn(async (url, options = {}) => {
+            const method = options.method ?? "GET";
+
+            if (url === "/api/TaskItems" && method === "GET") {
+                getCount += 1;
+                return createJsonResponse(getCount >= 2 ? updatedItems : initialItems);
+            }
+
+            if (url === "/api/TaskItems/1" && method === "PUT") {
+                return createJsonResponse({ id: 1, title: "Task with due date", priority: "Medium", dueDate: null, isDone: false });
+            }
+
+            throw new Error(`Unexpected fetch: ${method} ${url}`);
+        });
+
+        const script = fs.readFileSync(scriptPath, "utf8");
+        global.eval(script);
+
+        await waitForRender();
+
+        const editButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Edit");
+        expect(editButton).toBeTruthy();
+        editButton.click();
+
+        let dueDateInput;
+        await vi.waitFor(() => {
+            dueDateInput = document.querySelector("input[aria-label='Edit due date for task 1']");
+            expect(dueDateInput).toBeTruthy();
+        });
+
+        dueDateInput.value = "";
+
+        const saveButton = Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Save");
+        expect(saveButton).toBeTruthy();
+        saveButton.click();
+
+        await vi.waitFor(() => {
+            const putCall = global.fetch.mock.calls.find(([url, options]) =>
+                url === "/api/TaskItems/1" && options?.method === "PUT"
+            );
+            expect(putCall).toBeTruthy();
+            const putPayload = JSON.parse(putCall[1].body);
+            expect(putPayload.dueDate).toBe(null);
+        });
     });
 
     it("empty edit title shows validation and does not send PUT", async () => {

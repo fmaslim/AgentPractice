@@ -8,4 +8,6 @@ public class CreateTaskItemRequest
     public string Title { get; set; } = string.Empty;
 
     public string? Priority { get; set; }
+
+    public DateOnly? DueDate { get; set; }
 }

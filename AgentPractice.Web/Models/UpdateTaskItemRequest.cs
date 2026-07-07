@@ -7,4 +7,6 @@ public class UpdateTaskItemRequest
     public bool IsDone { get; set; }
 
     public string? Priority { get; set; }
+
+    public DateOnly? DueDate { get; set; }
 }

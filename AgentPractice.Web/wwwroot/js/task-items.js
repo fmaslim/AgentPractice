@@ -2,6 +2,7 @@
     const createFormEl = document.getElementById("task-item-create-form");
     const titleInputEl = document.getElementById("task-item-title");
     const createPrioritySelectEl = document.getElementById("task-item-priority");
+    const createDueDateInputEl = document.getElementById("task-item-due-date");
     const addButtonEl = document.getElementById("task-item-add-button");
     const createSuccessEl = document.getElementById("task-item-create-success");
     const createErrorEl = document.getElementById("task-item-create-error");
@@ -16,7 +17,7 @@
     const sortSelectEl = document.getElementById("task-items-sort");
     const clearCompletedButtonEl = document.getElementById("task-items-clear-completed");
 
-    if (!createFormEl || !titleInputEl || !createPrioritySelectEl || !addButtonEl || !createSuccessEl || !createErrorEl || !loadingEl || !errorEl || !countEl || !emptyEl || !listEl || !searchInputEl || !clearSearchButtonEl || !sortSelectEl || !clearCompletedButtonEl) {
+    if (!createFormEl || !titleInputEl || !createPrioritySelectEl || !createDueDateInputEl || !addButtonEl || !createSuccessEl || !createErrorEl || !loadingEl || !errorEl || !countEl || !emptyEl || !listEl || !searchInputEl || !clearSearchButtonEl || !sortSelectEl || !clearCompletedButtonEl) {
         return;
     }
 
@@ -210,6 +211,22 @@
         return badge;
     }
 
+    function normalizeDueDate(dueDate) {
+        const value = String(dueDate ?? "").trim();
+
+        if (!value) {
+            return null;
+        }
+
+        return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+    }
+
+    function getDueDateLabel(dueDate) {
+        const normalizedDueDate = normalizeDueDate(dueDate);
+
+        return normalizedDueDate ?? "No due date";
+    }
+
     function buildCompleteButton() {
         const button = document.createElement("button");
         button.type = "button";
@@ -263,14 +280,14 @@
         }
     }
 
-    async function updateTaskItem(itemId, title, isDone, priority) {
+    async function updateTaskItem(itemId, title, isDone, priority, dueDate) {
         const response = await fetch(`/api/TaskItems/${itemId}`, {
             method: "PUT",
             headers: {
                 Accept: "application/json",
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ title: title, isDone: isDone, priority: priority })
+            body: JSON.stringify({ title: title, isDone: isDone, priority: priority, dueDate: dueDate })
         });
 
         if (!response.ok) {
@@ -301,9 +318,11 @@
 
             const isEditingRow = editingTaskItemId === item.id;
             const itemPriority = normalizePriority(item.priority);
+            const itemDueDate = normalizeDueDate(item.dueDate);
 
             let editTitleInput = null;
             let editPrioritySelect = null;
+            let editDueDateInput = null;
 
             if (isEditingRow) {
                 editTitleInput = document.createElement("input");
@@ -333,6 +352,13 @@
                 }
 
                 content.appendChild(editPrioritySelect);
+
+                editDueDateInput = document.createElement("input");
+                editDueDateInput.type = "date";
+                editDueDateInput.className = "form-control form-control-sm mt-2";
+                editDueDateInput.value = itemDueDate ?? "";
+                editDueDateInput.setAttribute("aria-label", "Edit due date for task " + item.id);
+                content.appendChild(editDueDateInput);
             } else {
                 const title = document.createElement("h2");
                 title.className = "h6 mb-1";
@@ -342,7 +368,7 @@
 
             const meta = document.createElement("p");
             meta.className = "mb-0 text-muted small";
-            meta.textContent = "Task #" + item.id + " • Priority: " + itemPriority;
+            meta.textContent = "Task #" + item.id + " • Priority: " + itemPriority + " • Due: " + getDueDateLabel(itemDueDate);
 
             content.appendChild(meta);
 
@@ -351,13 +377,14 @@
             actions.appendChild(buildStatusBadge(Boolean(item.isDone)));
             actions.appendChild(buildPriorityBadge(itemPriority));
 
-            if (isEditingRow && editTitleInput && editPrioritySelect) {
+            if (isEditingRow && editTitleInput && editPrioritySelect && editDueDateInput) {
                 const saveButton = buildSaveButton();
                 const cancelButton = buildCancelButton();
 
                 saveButton.addEventListener("click", async function () {
                     const nextTitle = editTitleInput.value.trim();
                     const nextPriority = normalizePriority(editPrioritySelect.value);
+                    const nextDueDate = normalizeDueDate(editDueDateInput.value);
 
                     if (!nextTitle) {
                         errorEl.textContent = "Title is required.";
@@ -372,7 +399,7 @@
                     saveButton.textContent = "Saving...";
 
                     try {
-                        await updateTaskItem(item.id, nextTitle, Boolean(item.isDone), nextPriority);
+                        await updateTaskItem(item.id, nextTitle, Boolean(item.isDone), nextPriority, nextDueDate);
                         editingTaskItemId = null;
                         await loadTaskItems();
                     } catch (error) {
@@ -551,14 +578,14 @@
         }
     }
 
-    async function createTaskItem(title, priority) {
+    async function createTaskItem(title, priority, dueDate) {
         const response = await fetch("/api/TaskItems", {
             method: "POST",
             headers: {
                 Accept: "application/json",
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ title: title, priority: priority })
+            body: JSON.stringify({ title: title, priority: priority, dueDate: dueDate })
         });
 
         if (!response.ok) {
@@ -577,6 +604,7 @@
 
         const title = titleInputEl.value.trim();
         const priority = normalizePriority(createPrioritySelectEl.value);
+        const dueDate = normalizeDueDate(createDueDateInputEl.value);
 
         if (!title) {
             createErrorEl.textContent = "Title is required.";
@@ -587,11 +615,12 @@
         try {
             isSubmittingCreate = true;
             setCreateSubmitting(true);
-            await createTaskItem(title, priority);
+            await createTaskItem(title, priority, dueDate);
             await loadTaskItems();
 
             titleInputEl.value = "";
             createPrioritySelectEl.value = "Medium";
+            createDueDateInputEl.value = "";
             createSuccessEl.textContent = "Task item created.";
             setVisible(createSuccessEl, true);
         } catch (error) {

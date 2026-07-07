@@ -42,6 +42,7 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("id=\"task-item-create-form\"", html);
         Assert.Contains("id=\"task-item-title\"", html);
         Assert.Contains("id=\"task-item-priority\"", html);
+        Assert.Contains("id=\"task-item-due-date\"", html);
         Assert.Contains("id=\"task-item-add-button\"", html);
         Assert.Contains("id=\"task-item-create-success\"", html);
         Assert.Contains("id=\"task-item-create-error\"", html);
@@ -103,7 +104,8 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("fetch(\"/api/TaskItems\"", script);
         Assert.Contains("method: \"POST\"", script);
         Assert.Contains("const createPrioritySelectEl = document.getElementById(\"task-item-priority\");", script);
-        Assert.Contains("JSON.stringify({ title: title, priority: priority })", script);
+        Assert.Contains("const createDueDateInputEl = document.getElementById(\"task-item-due-date\");", script);
+        Assert.Contains("JSON.stringify({ title: title, priority: priority, dueDate: dueDate })", script);
         Assert.Contains("isSubmittingCreate = true;", script);
         Assert.Contains("isSubmittingCreate = false;", script);
         Assert.Contains("addButtonEl.disabled = isSubmitting", script);
@@ -146,9 +148,10 @@ public class TaskItemsPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("button.textContent = \"Delete\"", script);
         Assert.Contains("fetch(`/api/TaskItems/${itemId}`", script);
         Assert.Contains("method: \"PUT\"", script);
-        Assert.Contains("JSON.stringify({ title: title, isDone: isDone, priority: priority })", script);
+        Assert.Contains("JSON.stringify({ title: title, isDone: isDone, priority: priority, dueDate: dueDate })", script);
         Assert.Contains("const nextPriority = normalizePriority(editPrioritySelect.value);", script);
-        Assert.Contains("await updateTaskItem(item.id, nextTitle, Boolean(item.isDone), nextPriority);", script);
+        Assert.Contains("const nextDueDate = normalizeDueDate(editDueDateInput.value);", script);
+        Assert.Contains("await updateTaskItem(item.id, nextTitle, Boolean(item.isDone), nextPriority, nextDueDate);", script);
         Assert.Contains("const shouldDelete = window.confirm(\"Delete this task item?\");", script);
         Assert.Contains("if (!shouldDelete)", script);
         Assert.Contains("method: \"DELETE\"", script);

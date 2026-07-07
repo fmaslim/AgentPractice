@@ -8,5 +8,7 @@ public class TaskItem
 
     public string Priority { get; set; } = "Medium";
 
+    public DateOnly? DueDate { get; set; }
+
     public bool IsDone { get; set; }
 }

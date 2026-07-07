@@ -15,7 +15,7 @@
             <div class="card-body">
                 <label for="task-item-title" class="form-label">New task title</label>
                 <div class="row g-2">
-                    <div class="col-12 col-md-8">
+                    <div class="col-12 col-md-6">
                     <input
                         id="task-item-title"
                         name="title"
@@ -25,7 +25,7 @@
                         autocomplete="off"
                         maxlength="200" />
                     </div>
-                    <div class="col-8 col-md-2">
+                    <div class="col-6 col-md-2">
                         <label for="task-item-priority" class="visually-hidden">Priority</label>
                         <select id="task-item-priority" name="priority" class="form-select" aria-label="New task priority">
                             <option value="Low">Low</option>
@@ -33,7 +33,11 @@
                             <option value="High">High</option>
                         </select>
                     </div>
-                    <div class="col-4 col-md-2 d-grid">
+                    <div class="col-6 col-md-2">
+                        <label for="task-item-due-date" class="visually-hidden">Due date</label>
+                        <input id="task-item-due-date" name="dueDate" type="date" class="form-control" aria-label="New task due date" />
+                    </div>
+                    <div class="col-12 col-md-2 d-grid">
                     <button id="task-item-add-button" type="submit" class="btn btn-primary">Add</button>
                     </div>
                 </div>

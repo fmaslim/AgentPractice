@@ -12,7 +12,7 @@ public class TaskItemService : ITaskItemService
     [
         new() { Id = 1, Title = "Set up MVC project", Priority = PriorityMedium, IsDone = true },
         new() { Id = 2, Title = "Add health endpoint", Priority = PriorityMedium, IsDone = true },
-        new() { Id = 3, Title = "Create first domain slice", Priority = PriorityMedium, IsDone = false }
+        new() { Id = 3, Title = "Create first domain slice", Priority = PriorityMedium, DueDate = new DateOnly(2026, 12, 31), IsDone = false }
     ];
 
     public IEnumerable<TaskItem> GetTaskItems()
@@ -25,7 +25,7 @@ public class TaskItemService : ITaskItemService
         return _taskItems.FirstOrDefault(taskItem => taskItem.Id == id);
     }
 
-    public TaskItem CreateTaskItem(string title, string? priority)
+    public TaskItem CreateTaskItem(string title, string? priority, DateOnly? dueDate)
     {
         var nextId = _taskItems.Count == 0 ? 1 : _taskItems.Max(taskItem => taskItem.Id) + 1;
 
@@ -34,6 +34,7 @@ public class TaskItemService : ITaskItemService
             Id = nextId,
             Title = title,
             Priority = NormalizePriority(priority),
+            DueDate = dueDate,
             IsDone = false
         };
 
@@ -42,7 +43,7 @@ public class TaskItemService : ITaskItemService
         return taskItem;
     }
 
-    public TaskItem? UpdateTaskItem(int id, string title, bool isDone, string? priority)
+    public TaskItem? UpdateTaskItem(int id, string title, bool isDone, string? priority, DateOnly? dueDate)
     {
         var existingItem = _taskItems.FirstOrDefault(taskItem => taskItem.Id == id);
 
@@ -55,6 +56,7 @@ public class TaskItemService : ITaskItemService
         existingItem.Priority = priority is null
             ? NormalizePriority(existingItem.Priority)
             : NormalizePriority(priority);
+        existingItem.DueDate = dueDate;
         existingItem.IsDone = isDone;
 
         return existingItem;
